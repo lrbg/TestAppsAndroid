@@ -6,39 +6,49 @@ on:
       - main
 
 jobs:
-  run-tests:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Check out repository
+        uses: actions/checkout@v3
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
 
-    - name: Install dependencies
-      run: |
-        npm ci
-        npm install appium --global
-        appium --version
+      - name: Install Appium
+        run: npm install -g appium
 
-    - name: Start Appium Server
-      run: |
-        nohup appium --relaxed-security --base-path "/wd/hub" &
-        sleep 10  # Esperar a que Appium inicie
+      - name: Set up Android SDK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openjdk-11-jdk wget unzip
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          mkdir -p $HOME/android-sdk
+          unzip -q commandlinetools-linux-9477386_latest.zip -d $HOME/android-sdk/cmdline-tools
+          mv $HOME/android-sdk/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
+          sdkmanager --sdk_root=$ANDROID_HOME --licenses
+          sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "emulator" "system-images;android-31;default;x86_64"
 
-    - name: Setup Android Emulator
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
-        sdkmanager "system-images;android-35;google_apis;x86_64"
-        avdmanager create avd -n test -k "system-images;android-35;google_apis;x86_64" --force
-        nohup emulator @test -no-window -no-audio &
-        adb wait-for-device
-        sleep 60  # Esperar a que el emulador inicie completamente
+      - name: Start Appium server
+        run: nohup appium --relaxed-security --base-path "/wd/hub" &
 
-    - name: Run Tests
-      run: |
-        npm run wdio
+      - name: Start Android Emulator
+        run: |
+          echo "no" | avdmanager create avd -n Pixel_7_API_31 -k "system-images;android-31;default;x86_64"
+          nohup emulator -avd Pixel_7_API_31 -no-window -no-audio &
+
+      - name: Wait for emulator to boot
+        run: |
+          adb wait-for-device
+          adb shell input keyevent 82
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run WebDriverIO Tests
+        run: BRAND=gfa npm run wdio
