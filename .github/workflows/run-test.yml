@@ -1,33 +1,40 @@
-name: Appium Service
+name: Start Android Emulator
 
 on:
   push:
     branches:
       - main
-  pull_request:
 
 jobs:
-  start-appium:
+  start-android-emulator:
     runs-on: ubuntu-latest
 
     steps:
-      # Instalar dependencias necesarias
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - name: Install Appium
+      # Configurar herramientas de Android
+      - name: Setup Android SDK
         run: |
-          npm install -g appium
+          sudo apt-get update
+          sudo apt-get install -y openjdk-11-jdk
+          mkdir -p "$HOME/android-sdk/cmdline-tools/latest"
+          curl -o sdk-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          unzip -q sdk-tools.zip -d "$HOME/android-sdk/cmdline-tools/latest"
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
 
-      # Levantar Appium
-      - name: Start Appium server
+      # Crear y arrancar el emulador
+      - name: Start Android Emulator
         run: |
-          appium --relaxed-security --base-path "/wd/hub" &
-          sleep 5 # Esperar a que Appium se inicie
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
+          echo "no" | avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel_5"
+          $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window &
+          adb wait-for-device
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
 
-      # Validar que Appium está corriendo
-      - name: Validate Appium is running
-        run: |
-          curl http://127.0.0.1:4723/wd/hub/status
+      # Verificar que el emulador está corriendo
+      - name: Verify Emulator is Running
+        run: adb devices
