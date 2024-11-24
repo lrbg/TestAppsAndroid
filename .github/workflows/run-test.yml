@@ -27,6 +27,7 @@ jobs:
       run: |
         npm install
         npm install -g appium  # Instalar Appium globalmente
+        appium driver install uiautomator2  # Instalar UiAutomator2 para Android
 
     - name: Start Appium Server
       run: |
