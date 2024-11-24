@@ -11,22 +11,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Clonar el repositorio
+      # 1. Clonar el repositorio
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Configurar Node.js
+      # 2. Configurar Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      # Instalar dependencias del proyecto
-      - name: Install Dependencies
+      # 3. Instalar dependencias del proyecto
+      - name: Install Project Dependencies
         run: |
           npm install
 
-      # Instalar Android SDK
+      # 4. Instalar Android SDK
       - name: Install Android SDK
         run: |
           sudo apt-get update
@@ -40,7 +40,7 @@ jobs:
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
 
-      # Crear y arrancar el emulador
+      # 5. Crear y arrancar el emulador
       - name: Start Android Emulator
         run: |
           export ANDROID_HOME=$HOME/android-sdk
@@ -50,13 +50,23 @@ jobs:
           sleep 60
           $ANDROID_HOME/platform-tools/adb wait-for-device
 
-      # Iniciar el servidor Appium
+      # 6. Instalar Appium
+      - name: Install Appium
+        run: |
+          npm install -g appium
+
+      # 7. Iniciar el servidor Appium
       - name: Start Appium Server
         run: |
           npx appium --relaxed-security --base-path "/wd/hub" &
           sleep 5
+          
+      # 8. Validar que Appium está corriendo
+      - name: Validate Appium Server
+        run: |
+          curl http://127.0.0.1:4723/wd/hub/status
 
-      # Ejecutar pruebas E2E
+      # 9. Ejecutar pruebas E2E
       - name: Run E2E Tests
         env:
           BRAND: gfa
