@@ -17,6 +17,9 @@ jobs:
       PATH: $PATH:/usr/local/lib/android/sdk/platform-tools:/usr/local/lib/android/sdk/tools
 
     steps:
+    - name: Install tar
+      run: sudo apt-get update && sudo apt-get install -y tar
+
     - name: Checkout repository
       uses: actions/checkout@v3
 
