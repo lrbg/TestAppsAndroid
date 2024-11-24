@@ -7,8 +7,8 @@ exports.config = {
     runner: 'local',
     hostname: '127.0.0.1',
     port: 4723,
-    //path: '/wd/hub',
-    path: '/',
+    path: '/wd/hub',
+    //path: '/',
     //
     // ==================
     // Specify Test Files
@@ -99,7 +99,7 @@ exports.config = {
     //
     // Default timeout in milliseconds for request
     // if browser driver or grid doesn't send response
-    connectionRetryTimeout: 120000,
+    connectionRetryTimeout: 240000,
     //
     // Default request retries count
     connectionRetryCount: 3,

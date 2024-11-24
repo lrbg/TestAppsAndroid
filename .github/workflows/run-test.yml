@@ -41,7 +41,11 @@ jobs:
         run: |
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
-          adb version
+          adb version || { echo "ADB not found in PATH"; exit 1; }
+
+      - name: Install Node.js Dependencies
+        run: |
+          npm install
 
       - name: Create and Start Emulator
         run: |
@@ -49,8 +53,8 @@ jobs:
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel_5"
           $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu swiftshader_indirect -accel off &
-          sleep 60
-          $ANDROID_HOME/platform-tools/adb wait-for-device
+          sleep 90
+          adb wait-for-device
 
       - name: Verify Emulator is Running
         run: |
@@ -63,15 +67,14 @@ jobs:
           npm install -g appium
           npx appium driver install uiautomator2
 
-      - name: Start Appium server
+      - name: Start Appium Server
         run: |
           npx appium --relaxed-security --base-path "/wd/hub" &
-          sleep 5
+          sleep 10
           curl http://127.0.0.1:4723/wd/hub/status
 
       - name: Run Appium Tests
         run: |
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
-          npm install
           BRAND=gfa npm run wdio
