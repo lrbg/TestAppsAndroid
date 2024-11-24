@@ -1,4 +1,4 @@
-name: Android Appium CI
+name: Android Emulator Test with Appium
 
 on:
   push:
@@ -7,62 +7,51 @@ on:
   pull_request:
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      # Configuración de Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 18
+      # Instalar dependencias
+      - name: Install dependencies
+        run: npm install
 
-    - name: Install dependencies
-      run: |
-        npm install -g appium
-        npm install -g appium-doctor
-        appium-doctor --android # Verifica el entorno Android para Appium
+      # Instalar Appium globalmente
+      - name: Install Appium
+        run: npm install -g appium
 
-    - name: Set up Android SDK
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y openjdk-11-jdk wget unzip
-        wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-        mkdir -p $HOME/android-sdk/cmdline-tools
-        unzip -q commandlinetools-linux-9477386_latest.zip -d $HOME/android-sdk/cmdline-tools
-        mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
-        export ANDROID_HOME=$HOME/android-sdk
-        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
-        yes | sdkmanager --sdk_root=$ANDROID_HOME --licenses
-        sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "emulator" "system-images;android-31;default;x86_64"
+      # Configuración de Android SDK
+      - name: Setup Android SDK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip openjdk-11-jdk
+          wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip -O cmdline-tools.zip
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          unzip cmdline-tools.zip -d $HOME/android-sdk/cmdline-tools
+          mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-31" "system-images;android-31;default;x86_64" "emulator"
 
-    - name: Create and launch Android emulator
-      run: |
-        export ANDROID_HOME=$HOME/android-sdk
-        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
-        echo "no" | avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel_5"
-        $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window &
-        adb wait-for-device
-        adb shell settings put global window_animation_scale 0
-        adb shell settings put global transition_animation_scale 0
-        adb shell settings put global animator_duration_scale 0
+      # Iniciar Appium y Emulador
+      - name: Start Appium and Emulator
+        run: |
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
+          appium --relaxed-security --base-path "/wd/hub" &
+          nohup emulator -avd Pixel_7_API_35 -no-audio -no-window &
+          adb wait-for-device
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
 
-    - name: Start Appium server
-      run: |
-        appium --address 0.0.0.0 --port 4723 &
-
-    - name: Run Appium tests
-      run: |
-        export PATH=$ANDROID_HOME/platform-tools:$PATH
-        adb devices
-        # Ejecuta tus pruebas con el comando de tu framework, por ejemplo:
-        yarn test # Modifica según tu configuración de Appium
-
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: test-results
-        path: ./test-results/
+      # Ejecutar pruebas con WebdriverIO
+      - name: Run WebdriverIO Tests
+        env:
+          BRAND: gfa
+        run: npm run wdio
