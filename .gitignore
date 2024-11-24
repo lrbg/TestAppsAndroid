@@ -1,0 +1,5 @@
+# Ignorar APKs
+apk/*.apk
+
+# Ignorar aplicaciones compiladas
+app/**/*.app
