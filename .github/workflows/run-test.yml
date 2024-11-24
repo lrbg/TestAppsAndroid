@@ -1,4 +1,4 @@
-name: Run WDIO Tests with Docker
+name: Run WDIO Tests with Docker and APK from S3
 
 on:
   push:
@@ -20,22 +20,39 @@ jobs:
           -v ${{ github.workspace }}:/workspace \
           -w /workspace \
           openjdk:11 bash -c "
+            # Instalar dependencias básicas
             apt-get update &&
-            apt-get install -y wget unzip tar curl &&
+            apt-get install -y wget unzip tar curl nodejs npm &&
+            
+            # Descargar y configurar Android SDK
             wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip &&
-            mkdir -p /usr/local/lib/android/sdk/cmdline-tools &&
-            unzip -q cmdline-tools.zip -d /usr/local/lib/android/sdk/cmdline-tools &&
+            mkdir -p /usr/local/lib/android/sdk/cmdline-tools/latest &&
+            unzip -q cmdline-tools.zip -d /usr/local/lib/android/sdk/cmdline-tools/latest &&
             rm cmdline-tools.zip &&
-            yes | /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager --licenses &&
-            /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager 'platform-tools' 'emulator' 'platforms;android-33' 'system-images;android-33;google_apis;x86_64' &&
+            export PATH=\$PATH:/usr/local/lib/android/sdk/cmdline-tools/latest/bin:/usr/local/lib/android/sdk/platform-tools &&
+            yes | sdkmanager --licenses &&
+            sdkmanager 'platform-tools' 'emulator' 'platforms;android-33' 'system-images;android-33;google_apis;x86_64' &&
+
+            # Crear emulador Android
+            echo no | avdmanager create avd -n test -k 'system-images;android-33;google_apis;x86_64' &&
+            nohup emulator -avd test -no-window -no-audio &
+            sleep 30 &&
+
+            # Descargar el archivo APK desde S3
+            wget https://appsreservamos2024r1.s3.us-east-2.amazonaws.com/gfa22112024.apk -O /workspace/app.apk &&
+
+            # Validar dispositivos disponibles
+            adb devices &&
+
+            # Instalar dependencias de Node.js
             npm install &&
             npm install -g appium &&
             appium driver install uiautomator2 &&
+
+            # Iniciar el servidor de Appium
             appium --log-level info --port 4723 &
             sleep 20 &&
-            adb start-server &&
-            adb devices &&
-            nohup /usr/local/lib/android/sdk/emulator/emulator -avd test -no-window -no-audio &
-            sleep 30 &&
+
+            # Ejecutar las pruebas WDIO
             npm run wdio
           "
