@@ -1,4 +1,4 @@
-name: Android Emulator & Appium E2E
+name: Appium Test Workflow
 
 on:
   push:
@@ -7,23 +7,17 @@ on:
   pull_request:
 
 jobs:
-  e2e-tests:
+  setup-and-test:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Configurar Node.js
+      # Configuración inicial
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      # 2. Instalar dependencias Android
-      - name: Install Android dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y openjdk-11-jdk unzip wget
-
-      # 3. Configurar Android SDK
+      # Instalación del SDK de Android
       - name: Setup Android SDK
         run: |
           mkdir -p "$HOME/android-sdk/cmdline-tools"
@@ -35,7 +29,14 @@ jobs:
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
 
-      # 4. Crear y lanzar emulador
+      # Validar instalación de adb
+      - name: Validate adb Installation
+        run: |
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
+          adb version
+
+      # Crear y levantar el emulador
       - name: Create and Start Emulator
         run: |
           export ANDROID_HOME=$HOME/android-sdk
@@ -45,28 +46,29 @@ jobs:
           sleep 60
           $ANDROID_HOME/platform-tools/adb wait-for-device
 
-      # 5. Validar el emulador
-      - name: Verify Emulator
-        run: adb devices
+      # Validar que el emulador está corriendo
+      - name: Verify Emulator is Running
+        run: |
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
+          adb devices
 
-      # 6. Instalar Appium
+      # Instalar Appium
       - name: Install Appium
         run: |
           npm install -g appium
           npx appium driver install uiautomator2
 
-      # 7. Iniciar servidor Appium
-      - name: Start Appium Server
+      # Validar que Appium está corriendo
+      - name: Start Appium server
         run: |
           npx appium --relaxed-security --base-path "/wd/hub" &
           sleep 5
+          curl http://127.0.0.1:4723/wd/hub/status
 
-      # 8. Validar Appium
-      - name: Validate Appium Server
-        run: curl http://127.0.0.1:4723/wd/hub/status
-
-      # 9. Ejecutar pruebas E2E
-      - name: Run E2E Tests
-        env:
-          BRAND: gfa
-        run: npm run wdio
+      # Ejecutar pruebas
+      - name: Run Appium Tests
+        run: |
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
+          BRAND=gfa npm run wdio
