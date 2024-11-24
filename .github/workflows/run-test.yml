@@ -12,12 +12,11 @@ jobs:
 
     env:
       DEVICEFARM_TEST_PACKAGE_PATH: "./" # Ajusta según el proyecto
-      DEVICEFARM_LOG_DIR: "./logs"
-      DEVICEFARM_APP_PATH: "./path/to/app.apk" # Cambiar al path real del APK
+      DEVICEFARM_LOG_DIR: "./logs" # Cambié esta variable de entorno
+      DEVICEFARM_APP_PATH: "https://appsreservamos2024r1.s3.us-east-2.amazonaws.com/gfa22112024.apk" 
       DEVICEFARM_DEVICE_NAME: "Pixel_5"
       DEVICEFARM_DEVICE_PLATFORM_NAME: "Android"
       DEVICEFARM_DEVICE_OS_VERSION: "12.0"
-      DEVICEFARM_CHROMEDRIVER_EXECUTABLE_DIR: "./chromedriver"
 
     steps:
       - name: Checkout repository
@@ -42,6 +41,10 @@ jobs:
           appium driver install uiautomator2
           appium driver list --installed
 
+      - name: Create log directory
+        run: |
+          mkdir -p $DEVICEFARM_LOG_DIR
+
       - name: Start Appium server
         run: |
           nohup appium --base-path=/wd/hub --log-timestamp \
@@ -53,7 +56,7 @@ jobs:
             "appium:platformVersion": "'$DEVICEFARM_DEVICE_OS_VERSION'", \
             "appium:chromedriverExecutableDir": "'$DEVICEFARM_CHROMEDRIVER_EXECUTABLE_DIR'", \
             "appium:automationName": "UiAutomator2"}' \
-            >> ./logs/appium.log 2>&1 &
+            >> $DEVICEFARM_LOG_DIR/appium.log 2>&1 &
           sleep 10
           until curl --silent --fail "http://0.0.0.0:4723/wd/hub/status"; do
             echo "Esperando que Appium inicie...";
