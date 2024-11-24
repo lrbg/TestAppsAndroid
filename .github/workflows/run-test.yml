@@ -1,69 +1,44 @@
-name: Android Appium Tests
+name: Run Appium Tests
 
 on:
   push:
     branches:
       - main
-  pull_request:
 
 jobs:
-  android-tests:
+  run-tests:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Check out the repository
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      # 2. Set up Java (necesario para el SDK de Android)
-      - name: Set up Java
-        uses: actions/setup-java@v3
-        with:
-          java-version: '11'
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
 
-      # 3. Set up Android SDK
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v2
-        with:
-          api-level: 33
-          target: "android-33"
-          arch: "x86_64"
-          emulator-name: "Pixel_7_API_33"
+    - name: Install dependencies
+      run: |
+        npm ci
+        npm install appium --global
+        appium --version
 
-      # 4. Install Appium
-      - name: Install Node.js and Appium
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      - name: Install Appium
-        run: |
-          npm install -g appium@2
-          appium --version
+    - name: Start Appium Server
+      run: |
+        nohup appium --relaxed-security --base-path "/wd/hub" &
+        sleep 10  # Esperar a que Appium inicie
 
-      # 5. Start Appium server
-      - name: Start Appium server
-        run: |
-          nohup appium --relaxed-security --base-path="/wd/hub" &
-          sleep 10
+    - name: Setup Android Emulator
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
+        sdkmanager "system-images;android-35;google_apis;x86_64"
+        avdmanager create avd -n test -k "system-images;android-35;google_apis;x86_64" --force
+        nohup emulator @test -no-window -no-audio &
+        adb wait-for-device
+        sleep 60  # Esperar a que el emulador inicie completamente
 
-      # 6. Start Android emulator
-      - name: Start Android Emulator
-        run: |
-          sdkmanager "system-images;android-33;google_apis;x86_64"
-          echo "no" | avdmanager create avd -n Pixel_7_API_33 -k "system-images;android-33;google_apis;x86_64"
-          nohup emulator @Pixel_7_API_33 -no-snapshot -no-window -gpu swiftshader_indirect &
-          adb wait-for-device
-          sleep 30
-          adb devices
-
-      # 7. Run tests
-      - name: Run Tests
-        run: |
-          npx wdio run wdio.conf.js
-
-      # 8. Upload logs
-      - name: Upload logs
-        uses: actions/upload-artifact@v3
-        with:
-          name: appium-logs
-          path: ./logs
+    - name: Run Tests
+      run: |
+        npm run wdio
