@@ -24,12 +24,14 @@ jobs:
         node-version: 18
 
     - name: Install dependencies
-      run: npm install
+      run: |
+        npm install
+        npm install -g appium  # Instalar Appium globalmente
 
     - name: Start Appium Server
       run: |
-        npx appium --log-level info --port 4723 &
-        sleep 20  # Asegurar tiempo para que Appium inicie correctamente
+        appium --log-level info --port 4723 &
+        sleep 20  # Asegura tiempo suficiente para que Appium arranque
 
     - name: Run WDIO Tests
       run: npm run wdio
