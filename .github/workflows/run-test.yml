@@ -10,72 +10,60 @@ jobs:
   android-tests:
     runs-on: ubuntu-latest
 
-    env:
-      DEVICEFARM_TEST_PACKAGE_PATH: "./" # Ajusta según el proyecto
-      DEVICEFARM_LOG_DIR: "./logs" # Cambié esta variable de entorno
-      DEVICEFARM_APP_PATH: "https://appsreservamos2024r1.s3.us-east-2.amazonaws.com/gfa22112024.apk" 
-      DEVICEFARM_DEVICE_NAME: "Pixel_5"
-      DEVICEFARM_DEVICE_PLATFORM_NAME: "Android"
-      DEVICEFARM_DEVICE_OS_VERSION: "12.0"
-
     steps:
+      # 1. Check out the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Node.js and Appium
+      # 2. Set up Java (necesario para el SDK de Android)
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+
+      # 3. Set up Android SDK
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v2
+        with:
+          api-level: 33
+          target: "android-33"
+          arch: "x86_64"
+          emulator-name: "Pixel_7_API_33"
+
+      # 4. Install Appium
+      - name: Install Node.js and Appium
         uses: actions/setup-node@v3
         with:
           node-version: 18
-
-      - run: |
-          echo "Instalando Appium"
+      - name: Install Appium
+        run: |
           npm install -g appium@2
           appium --version
 
-      - name: Install dependencies
-        run: |
-          npm install --force --legacy-peer-deps
-
-      - name: Install UiAutomator2 driver
-        run: |
-          appium driver install uiautomator2
-          appium driver list --installed
-
-      - name: Create log directory
-        run: |
-          mkdir -p $DEVICEFARM_LOG_DIR
-
+      # 5. Start Appium server
       - name: Start Appium server
         run: |
-          nohup appium --base-path=/wd/hub --log-timestamp \
-            --log-no-colors --relaxed-security --default-capabilities \
-            '{"appium:deviceName": "'$DEVICEFARM_DEVICE_NAME'", \
-            "platformName": "'$DEVICEFARM_DEVICE_PLATFORM_NAME'", \
-            "appium:app": "'$DEVICEFARM_APP_PATH'", \
-            "appium:udid": "emulator-5554", \
-            "appium:platformVersion": "'$DEVICEFARM_DEVICE_OS_VERSION'", \
-            "appium:chromedriverExecutableDir": "'$DEVICEFARM_CHROMEDRIVER_EXECUTABLE_DIR'", \
-            "appium:automationName": "UiAutomator2"}' \
-            >> $DEVICEFARM_LOG_DIR/appium.log 2>&1 &
+          nohup appium --relaxed-security --base-path="/wd/hub" &
           sleep 10
-          until curl --silent --fail "http://0.0.0.0:4723/wd/hub/status"; do
-            echo "Esperando que Appium inicie...";
-            sleep 1;
-          done
 
-      - name: Run tests
+      # 6. Start Android emulator
+      - name: Start Android Emulator
         run: |
-          npm ls --depth=0
+          sdkmanager "system-images;android-33;google_apis;x86_64"
+          echo "no" | avdmanager create avd -n Pixel_7_API_33 -k "system-images;android-33;google_apis;x86_64"
+          nohup emulator @Pixel_7_API_33 -no-snapshot -no-window -gpu swiftshader_indirect &
+          adb wait-for-device
+          sleep 30
+          adb devices
+
+      # 7. Run tests
+      - name: Run Tests
+        run: |
           npx wdio run wdio.conf.js
 
+      # 8. Upload logs
       - name: Upload logs
         uses: actions/upload-artifact@v3
         with:
           name: appium-logs
           path: ./logs
-
-      - name: Upload test reports
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-reports
-          path: ./reports
