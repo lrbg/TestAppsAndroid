@@ -33,6 +33,7 @@ jobs:
           echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel_5"
           $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu swiftshader_indirect -accel off &
           adb wait-for-device
+          sleep 30 # Espera adicional para asegurar que el sistema esté listo
           adb shell service check settings && adb shell settings put global window_animation_scale 0
           adb shell service check settings && adb shell settings put global transition_animation_scale 0
           adb shell service check settings && adb shell settings put global animator_duration_scale 0
