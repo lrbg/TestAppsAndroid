@@ -18,7 +18,7 @@ jobs:
 
     steps:
     - name: Install tar
-      run: sudo apt-get update && sudo apt-get install -y tar
+      run: apt-get update && apt-get install -y tar
 
     - name: Checkout repository
       uses: actions/checkout@v3
@@ -36,11 +36,11 @@ jobs:
 
     - name: Install Android SDK
       run: |
-        sudo apt-get update
-        sudo apt-get install -y openjdk-11-jdk wget unzip
+        apt-get update
+        apt-get install -y openjdk-11-jdk wget unzip
         wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-        sudo mkdir -p /usr/local/lib/android/sdk/cmdline-tools
-        sudo unzip -q cmdline-tools.zip -d /usr/local/lib/android/sdk/cmdline-tools
+        mkdir -p /usr/local/lib/android/sdk/cmdline-tools
+        unzip -q cmdline-tools.zip -d /usr/local/lib/android/sdk/cmdline-tools
         rm cmdline-tools.zip
         yes | /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager --licenses
         /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager "platform-tools" "emulator" "platforms;android-33" "build-tools;33.0.0"
