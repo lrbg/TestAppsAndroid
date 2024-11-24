@@ -11,13 +11,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Configuración inicial
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      # Instalación del SDK de Android
       - name: Setup Android SDK
         run: |
           mkdir -p "$HOME/android-sdk/cmdline-tools"
@@ -29,14 +30,19 @@ jobs:
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
 
-      # Validar instalación de adb
+      - name: Validate package.json presence
+        run: |
+          if [ ! -f package.json ]; then
+            echo "package.json not found in $(pwd)"
+            exit 1
+          fi
+
       - name: Validate adb Installation
         run: |
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           adb version
 
-      # Crear y levantar el emulador
       - name: Create and Start Emulator
         run: |
           export ANDROID_HOME=$HOME/android-sdk
@@ -46,29 +52,26 @@ jobs:
           sleep 60
           $ANDROID_HOME/platform-tools/adb wait-for-device
 
-      # Validar que el emulador está corriendo
       - name: Verify Emulator is Running
         run: |
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           adb devices
 
-      # Instalar Appium
       - name: Install Appium
         run: |
           npm install -g appium
           npx appium driver install uiautomator2
 
-      # Validar que Appium está corriendo
       - name: Start Appium server
         run: |
           npx appium --relaxed-security --base-path "/wd/hub" &
           sleep 5
           curl http://127.0.0.1:4723/wd/hub/status
 
-      # Ejecutar pruebas
       - name: Run Appium Tests
         run: |
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
+          npm install
           BRAND=gfa npm run wdio
