@@ -55,18 +55,23 @@ jobs:
         run: |
           npm install -g appium
 
-      # 7. Iniciar el servidor Appium
+      # 7. Instalar el driver UiAutomator2 en Appium
+      - name: Install Appium UiAutomator2 Driver
+        run: |
+          npx appium driver install uiautomator2
+
+      # 8. Iniciar el servidor Appium
       - name: Start Appium Server
         run: |
           npx appium --relaxed-security --base-path "/wd/hub" &
           sleep 5
-          
-      # 8. Validar que Appium está corriendo
+
+      # 9. Validar que Appium está corriendo
       - name: Validate Appium Server
         run: |
           curl http://127.0.0.1:4723/wd/hub/status
 
-      # 9. Ejecutar pruebas E2E
+      # 10. Ejecutar pruebas E2E
       - name: Run E2E Tests
         env:
           BRAND: gfa
