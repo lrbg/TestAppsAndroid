@@ -10,31 +10,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Configurar herramientas de Android
-      - name: Setup Android SDK
+      # Instalar dependencias necesarias
+      - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y openjdk-11-jdk
+          sudo apt-get install -y openjdk-11-jdk unzip wget
+
+      # Descargar e instalar Android SDK Command Line Tools
+      - name: Install Android SDK
+        run: |
           mkdir -p "$HOME/android-sdk/cmdline-tools/latest"
           curl -o sdk-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           unzip -q sdk-tools.zip -d "$HOME/android-sdk/cmdline-tools/latest"
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
 
       # Crear y arrancar el emulador
       - name: Start Android Emulator
         run: |
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
-          echo "no" | avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel_5"
+          echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel_5"
           $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window &
           adb wait-for-device
           adb shell settings put global window_animation_scale 0
           adb shell settings put global transition_animation_scale 0
           adb shell settings put global animator_duration_scale 0
 
-      # Verificar que el emulador está corriendo
-      - name: Verify Emulator is Running
+      # Verificar que el emulador está funcionando
+      - name: Verify Emulator
         run: adb devices
