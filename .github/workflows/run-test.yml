@@ -1,19 +1,17 @@
-name: Android Appium Tests
+name: Android Appium CI
 
 on:
   push:
     branches:
       - main
   pull_request:
-    branches:
-      - main
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v3
 
     - name: Set up Node.js
@@ -24,7 +22,8 @@ jobs:
     - name: Install dependencies
       run: |
         npm install -g appium
-        npm ci
+        npm install -g appium-doctor
+        appium-doctor --android # Verifica el entorno Android para Appium
 
     - name: Set up Android SDK
       run: |
@@ -39,8 +38,10 @@ jobs:
         yes | sdkmanager --sdk_root=$ANDROID_HOME --licenses
         sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "emulator" "system-images;android-31;default;x86_64"
 
-    - name: Start Android Emulator
+    - name: Create and launch Android emulator
       run: |
+        export ANDROID_HOME=$HOME/android-sdk
+        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
         echo "no" | avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel_5"
         $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window &
         adb wait-for-device
@@ -48,15 +49,18 @@ jobs:
         adb shell settings put global transition_animation_scale 0
         adb shell settings put global animator_duration_scale 0
 
-    - name: Start Appium Server
+    - name: Start Appium server
       run: |
-        nohup appium --relaxed-security --base-path "/wd/hub" &
-        sleep 10
+        appium --address 0.0.0.0 --port 4723 &
 
-    - name: Run Tests
-      run: BRAND=gfa npm run wdio
+    - name: Run Appium tests
+      run: |
+        export PATH=$ANDROID_HOME/platform-tools:$PATH
+        adb devices
+        # Ejecuta tus pruebas con el comando de tu framework, por ejemplo:
+        yarn test # Modifica según tu configuración de Appium
 
-    - name: Upload Test Results
+    - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v3
       with:
