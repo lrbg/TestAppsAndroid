@@ -7,8 +7,8 @@ exports.config = {
     runner: 'local',
     hostname: '127.0.0.1',
     port: 4723,
-    path: '/wd/hub',
-    //path: '/',
+    //path: '/wd/hub',
+    path: '/',
     //
     // ==================
     // Specify Test Files
@@ -57,8 +57,10 @@ exports.config = {
         platformName: 'Android',
         'appium:deviceName': 'emulator-5554',
         'appium:automationName': 'UiAutomator2',
-        'appium:app': 'https://appsreservamos2024r1.s3.us-east-2.amazonaws.com/gfa22112024.apk' 
+        'appium:app': 'https://appsreservamos2024r1.s3.us-east-2.amazonaws.com/gfa22112024.apk',
         //'appium:app': '/Users/luisrogelio/Documents/testAppReservamosJS/apk/gfa22112024.apk' 
+        'appium:noReset': true, // Mantener la sesión del emulador
+        'appium:newCommandTimeout': 300, // Evitar timeouts en comandos
     }],
 
     //
@@ -99,7 +101,7 @@ exports.config = {
     //
     // Default timeout in milliseconds for request
     // if browser driver or grid doesn't send response
-    connectionRetryTimeout: 240000,
+    connectionRetryTimeout: 300000,
     //
     // Default request retries count
     connectionRetryCount: 3,
@@ -137,7 +139,7 @@ exports.config = {
     // See the full list at http://mochajs.org/
     mochaOpts: {
         ui: 'bdd',
-        timeout: 60000
+        timeout: 120000
     },
 
     //
@@ -197,6 +199,9 @@ exports.config = {
     before: function () {
         const brand = process.env.BRAND || 'default';
         console.log(`Marca seleccionada en wdio.conf.js: ${brand}`);
+        if (!brand) {
+            throw new Error('La variable BRAND no está definida.');
+        }
         global.brand = brand;
         global.platform = process.env.PLATFORM || 'Android';
     },
