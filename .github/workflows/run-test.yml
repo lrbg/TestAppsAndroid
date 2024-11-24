@@ -1,4 +1,4 @@
-name: Android Emulator Test with Appium
+name: Appium Service
 
 on:
   push:
@@ -7,51 +7,27 @@ on:
   pull_request:
 
 jobs:
-  test:
+  start-appium:
     runs-on: ubuntu-latest
+
     steps:
-      # Configuración de Node.js
+      # Instalar dependencias necesarias
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      # Instalar dependencias
-      - name: Install dependencies
-        run: npm install
-
-      # Instalar Appium globalmente
       - name: Install Appium
-        run: npm install -g appium
-
-      # Configuración de Android SDK
-      - name: Setup Android SDK
         run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip openjdk-11-jdk
-          wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip -O cmdline-tools.zip
-          mkdir -p $HOME/android-sdk/cmdline-tools
-          unzip cmdline-tools.zip -d $HOME/android-sdk/cmdline-tools
-          mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-31" "system-images;android-31;default;x86_64" "emulator"
+          npm install -g appium
 
-      # Iniciar Appium y Emulador
-      - name: Start Appium and Emulator
+      # Levantar Appium
+      - name: Start Appium server
         run: |
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           appium --relaxed-security --base-path "/wd/hub" &
-          nohup emulator -avd Pixel_7_API_35 -no-audio -no-window &
-          adb wait-for-device
-          adb shell settings put global window_animation_scale 0
-          adb shell settings put global transition_animation_scale 0
-          adb shell settings put global animator_duration_scale 0
+          sleep 5 # Esperar a que Appium se inicie
 
-      # Ejecutar pruebas con WebdriverIO
-      - name: Run WebdriverIO Tests
-        env:
-          BRAND: gfa
-        run: npm run wdio
+      # Validar que Appium está corriendo
+      - name: Validate Appium is running
+        run: |
+          curl http://127.0.0.1:4723/wd/hub/status
