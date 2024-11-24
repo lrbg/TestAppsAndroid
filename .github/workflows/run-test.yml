@@ -1,0 +1,42 @@
+name: Run WDIO Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    env:
+      NODE_ENV: test
+      BRAND: gfa
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Start Appium Server
+      run: |
+        npx appium --log-level info --port 4723 &
+        sleep 10
+
+    - name: Run WDIO Tests
+      run: npm run wdio
+
+    - name: Upload Allure Results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: allure-results
+        path: allure-results/
