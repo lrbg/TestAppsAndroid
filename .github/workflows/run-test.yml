@@ -20,6 +20,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y openjdk-11-jdk unzip wget curl
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+
       # Configurar Android SDK
       - name: Setup Android SDK
         run: |
@@ -85,11 +91,26 @@ jobs:
           appium --version
           echo "Appium setup validated successfully"
 
+      # Iniciar appium service
+      - name: Init appium service
+        run: |
+          appium --relaxed-security --base-path "/wd/hub"
+          echo "Appium service init"
+
+      # Esperar a que Appium esté listo
+      - name: Wait for Appium to be Ready
+        run: sleep 10     
+
       # Instalar appium-doctor
       - name: Install Appium Doctor
         run: |
           npm install -g appium-doctor
           appium-doctor
+
+      # Verificar que Appium está ejecutándose
+      - name: Verify Appium is Running
+        run: curl http://127.0.0.1:4723/wd/hub/status
+
 
       # Instalar dependencias del proyecto
       - name: Install Project Dependencies
