@@ -33,14 +33,7 @@ jobs:
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
 
-      # 4. Verificar instalación de ADB
-      - name: Verify ADB Installation
-        run: |
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
-          adb version
-
-      # 5. Crear y arrancar el emulador
+      # 4. Crear y arrancar el emulador
       - name: Create and Start Emulator
         run: |
           export ANDROID_HOME=$HOME/android-sdk
@@ -49,58 +42,39 @@ jobs:
           $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-audio -no-window -gpu swiftshader_indirect -accel off -verbose &
           sleep 180
 
-      # 6. Esperar hasta que el emulador complete el arranque
-      - name: Wait for Emulator Boot
-        run: |
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
-          adb wait-for-device
-          for i in {1..60}; do
-            if adb shell getprop sys.boot_completed | grep -m 1 '1'; then
-              echo "Emulator boot completed"
-              exit 0
-            fi
-            echo "Waiting for emulator to complete boot... ($i)"
-            sleep 10
-          done
-          echo "Emulator did not complete boot in time"
-          exit 1
-
-      # 7. Verificar que el emulador está funcionando
-      - name: Verify Emulator Running
-        run: |
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
-          adb devices
-
-      # 8. Configurar Node.js para Appium
+      # 5. Configurar Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      # 9. Instalar dependencias del proyecto
+      # 6. Instalar dependencias del proyecto
       - name: Install Node.js Dependencies
         run: |
           npm install
 
-      # 10. Instalar Appium
+      # 7. Instalar Appium
       - name: Install Appium
         run: |
           npm install -g appium
 
-      # 11. Levantar Appium
+      # 8. Instalar el controlador UiAutomator2
+      - name: Install UiAutomator2 Driver
+        run: |
+          appium driver install uiautomator2
+
+      # 9. Levantar Appium
       - name: Start Appium server
         run: |
           appium --relaxed-security --base-path "/wd/hub" &
           sleep 5
 
-      # 12. Validar que Appium está corriendo
+      # 10. Validar que Appium está corriendo
       - name: Validate Appium is running
         run: |
           curl http://127.0.0.1:4723/wd/hub/status
 
-      # 13. Ejecutar pruebas E2E
+      # 11. Ejecutar pruebas E2E
       - name: Run Appium Tests
         run: |
           BRAND=gfa npm run wdio
