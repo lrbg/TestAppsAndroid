@@ -35,9 +35,10 @@ jobs:
         target: default
         ndk: '23.1.7779620'
 
-    - name: Install Build Tools
+    - name: Install required Android packages
       run: |
-        yes | sdkmanager "build-tools;31.0.0" "platform-tools" "platforms;android-31" "emulator"
+        yes | sdkmanager --licenses
+        sdkmanager "build-tools;31.0.0" "platform-tools" "platforms;android-31" "system-images;android-31;default;x86_64" "emulator"
 
     - name: Set environment variables
       run: |
@@ -46,7 +47,7 @@ jobs:
 
     - name: Create AVD
       run: |
-        echo "no" | avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel"
+        echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel"
         $ANDROID_HOME/emulator/emulator -list-avds
 
     - name: Start Android emulator
