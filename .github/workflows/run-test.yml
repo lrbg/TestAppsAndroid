@@ -100,7 +100,7 @@ jobs:
       # Iniciar appium service
       - name: Init appium service
         run: |
-          appium --relaxed-security --base-path "/wd/hub"
+          nohup appium --relaxed-security --base-path "/wd/hub" > appium.log 2>&1 &
           echo "Appium service init"
 
       # Validate Appium Driver Installation
@@ -119,7 +119,7 @@ jobs:
 
       # Verificar que Appium está ejecutándose
       - name: Verify Appium is Running
-        run: curl http://127.0.0.1:4723/wd/hub/status
+        run: curl http://127.0.0.1:4723/wd/hub/status || (echo "Appium failed to start" && exit 1)
 
 
       # Instalar dependencias del proyecto
