@@ -113,9 +113,20 @@ jobs:
       - name: Validate Appium Driver Installation
         run: appium driver list --installed
 
-      # Esperar a que Appium esté listo
-      - name: Wait for Appium to be Ready
-        run: sleep 10     
+      # Validar que el servicio de Appium está operativo
+      - name: Wait for Appium Service
+        run: |
+          for i in {1..60}; do
+            if curl -s http://127.0.0.1:4723/wd/hub/status | grep -q '"ready":true'; then
+              echo "Appium service is ready"
+              exit 0
+            fi
+            echo "Waiting for Appium service to be ready... ($i)"
+            sleep 5
+          done
+          echo "Appium service did not become ready in time"
+          exit 1
+
 
       # Instalar appium-doctor
       #- name: Install Appium Doctor
