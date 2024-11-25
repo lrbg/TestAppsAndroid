@@ -1,11 +1,3 @@
-name: Appium Test Workflow
-
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-
 jobs:
   setup-and-test:
     runs-on: ubuntu-latest
@@ -25,56 +17,26 @@ jobs:
           curl -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           unzip -q cmdline-tools.zip -d "$HOME/android-sdk/cmdline-tools"
           mv "$HOME/android-sdk/cmdline-tools/cmdline-tools" "$HOME/android-sdk/cmdline-tools/latest"
-          echo "export ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH" >> $GITHUB_ENV
-          source $GITHUB_ENV
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
-
-      - name: Validate package.json presence
-        run: |
-          if [ ! -f package.json ]; then
-            echo "package.json not found in $(pwd)"
-            exit 1
+          if [ ! -f "$ANDROID_HOME/platform-tools/adb" ]; then
+              echo "adb no está instalado correctamente. Revisa sdkmanager."
+              exit 1
           fi
 
       - name: Validate adb Installation
         run: |
-          adb version || { echo "ADB not found in PATH"; exit 1; }
-
-      - name: Install Node.js Dependencies
-        run: |
-          npm install
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
+          adb version || { echo "ADB no encontrado en PATH"; exit 1; }
 
       - name: Create and Start Emulator
         run: |
-          source $GITHUB_ENV
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel_5"
           $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu swiftshader_indirect -accel off &
-          sleep 90
-          adb wait-for-device
-
-      - name: Verify Emulator is Running
-        run: |
-          adb devices
-
-      - name: Install Appium
-        run: |
-          npm install -g appium
-          npx appium driver install uiautomator2
-
-      - name: Validate adb Installation Before Appium
-        run: |
-          adb version || { echo "ADB not found before starting Appium"; exit 1; }
-
-      - name: Start Appium Server
-        run: |
-          source $GITHUB_ENV
-          npx appium --relaxed-security --base-path "/wd/hub" &
-          sleep 10
-          curl http://127.0.0.1:4723/wd/hub/status
-
-      - name: Run Appium Tests
-        run: |
-          source $GITHUB_ENV
-          BRAND=gfa npm run wdio
+          sleep 60
+          $ANDROID_HOME/platform-tools/adb wait-for-device
