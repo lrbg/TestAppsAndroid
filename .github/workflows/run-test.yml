@@ -33,12 +33,18 @@ jobs:
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
 
-          # Verificar si adb está correctamente instalado
-          if ! command -v adb &> /dev/null; then
-            echo "adb command not found even after installation. Debugging PATH:"
-            echo $PATH
+          # Validar si adb está instalado
+          if [ ! -f "$ANDROID_HOME/platform-tools/adb" ]; then
+            echo "adb binary not found in expected location: $ANDROID_HOME/platform-tools"
             exit 1
           fi
+
+      - name: Export Environment Variables
+        run: |
+          echo "Re-exporting environment variables..."
+          echo "export ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH" >> $GITHUB_ENV
+          source $GITHUB_ENV
 
       - name: Validate package.json presence
         run: |
@@ -49,6 +55,7 @@ jobs:
 
       - name: Validate adb Installation
         run: |
+          echo "Checking adb version..."
           adb version || { echo "ADB not found in PATH"; exit 1; }
 
       - name: Install Node.js Dependencies
