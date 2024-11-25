@@ -1,4 +1,4 @@
-name: Android Emulator and Appium Test Workflow
+name: Appium Test Workflow
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Clonar repositorio
+      # Clonar el repositorio
       - name: Checkout Repository
         uses: actions/checkout@v3
 
@@ -20,6 +20,12 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18
+
+      # Instalar dependencias necesarias para Android SDK
+      - name: Install Android SDK Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openjdk-11-jdk unzip wget
 
       # Configurar Android SDK
       - name: Setup Android SDK
@@ -34,13 +40,7 @@ jobs:
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
 
-      # Validar instalación de ADB
-      - name: Verify ADB Installation
-        run: |
-          source $GITHUB_ENV
-          adb version || { echo "ADB not found in PATH"; exit 1; }
-
-      # Validar que package.json exista
+      # Validar la existencia de package.json
       - name: Validate package.json presence
         run: |
           if [ ! -f package.json ]; then
@@ -48,7 +48,13 @@ jobs:
             exit 1
           fi
 
-      # Instalar dependencias Node.js
+      # Validar instalación de adb
+      - name: Validate adb Installation
+        run: |
+          source $GITHUB_ENV
+          adb version || { echo "ADB not found in PATH"; exit 1; }
+
+      # Instalar dependencias de Node.js
       - name: Install Node.js Dependencies
         run: |
           npm install
@@ -59,9 +65,14 @@ jobs:
           source $GITHUB_ENV
           echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel_5"
           $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-audio -no-window -gpu swiftshader_indirect -accel off &
-          sleep 90
+          sleep 180
+
+      # Esperar hasta que el emulador complete el arranque
+      - name: Wait for Emulator Boot
+        run: |
+          source $GITHUB_ENV
           adb wait-for-device
-          for i in {1..30}; do
+          for i in {1..60}; do
             if adb shell getprop sys.boot_completed | grep -m 1 '1'; then
               echo "Emulator boot completed"
               exit 0
@@ -73,24 +84,24 @@ jobs:
           exit 1
 
       # Verificar que el emulador está funcionando
-      - name: Verify Emulator Running
+      - name: Verify Emulator is Running
         run: |
           source $GITHUB_ENV
           adb devices
 
-      # Instalar Appium
+      # Instalar Appium y drivers necesarios
       - name: Install Appium
         run: |
           npm install -g appium
           npx appium driver install uiautomator2
 
-      # Validar instalación de ADB después de Appium
-      - name: Validate ADB Installation After Appium
+      # Validar instalación de adb antes de ejecutar Appium
+      - name: Validate adb Installation Before Appium
         run: |
           source $GITHUB_ENV
-          adb version || { echo "ADB not found after Appium installation"; exit 1; }
+          adb version || { echo "ADB not found before starting Appium"; exit 1; }
 
-      # Iniciar servidor Appium
+      # Iniciar el servidor de Appium
       - name: Start Appium Server
         run: |
           source $GITHUB_ENV
@@ -98,7 +109,7 @@ jobs:
           sleep 10
           curl http://127.0.0.1:4723/wd/hub/status
 
-      # Ejecutar pruebas de Appium
+      # Ejecutar pruebas con Appium
       - name: Run Appium Tests
         run: |
           source $GITHUB_ENV
