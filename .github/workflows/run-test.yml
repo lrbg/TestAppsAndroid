@@ -11,36 +11,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Clonar el repositorio
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # Configurar Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      # Instalar dependencias necesarias para Android SDK
-      - name: Install Android SDK Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y openjdk-11-jdk unzip wget
-
-      # Configurar Android SDK
       - name: Setup Android SDK
         run: |
           mkdir -p "$HOME/android-sdk/cmdline-tools"
           curl -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           unzip -q cmdline-tools.zip -d "$HOME/android-sdk/cmdline-tools"
           mv "$HOME/android-sdk/cmdline-tools/cmdline-tools" "$HOME/android-sdk/cmdline-tools/latest"
-          echo "export ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH" >> $GITHUB_ENV
-          source $GITHUB_ENV
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH" >> $GITHUB_ENV
+          yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+          $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
 
-      # Validar la existencia de package.json
       - name: Validate package.json presence
         run: |
           if [ ! -f package.json ]; then
@@ -48,60 +37,27 @@ jobs:
             exit 1
           fi
 
-      # Validar instalación de adb
-      - name: Validate adb Installation
-        run: |
-          source $GITHUB_ENV
-          adb version || { echo "ADB not found in PATH"; exit 1; }
-
-      # Instalar dependencias de Node.js
       - name: Install Node.js Dependencies
-        run: |
-          npm install
+        run: npm install
 
-      # Crear y arrancar el emulador
       - name: Create and Start Emulator
         run: |
           source $GITHUB_ENV
           echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel_5"
-          $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-audio -no-window -gpu swiftshader_indirect -accel off &
+          $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu swiftshader_indirect -accel off &
           sleep 180
-
-      # Esperar hasta que el emulador complete el arranque
-      - name: Wait for Emulator Boot
-        run: |
-          source $GITHUB_ENV
           adb wait-for-device
-          for i in {1..60}; do
-            if adb shell getprop sys.boot_completed | grep -m 1 '1'; then
-              echo "Emulator boot completed"
-              exit 0
-            fi
-            echo "Waiting for emulator to complete boot... ($i)"
-            sleep 10
-          done
-          echo "Emulator did not complete boot in time"
-          exit 1
 
-      # Verificar que el emulador está funcionando
-      - name: Verify Emulator is Running
+      - name: Verify Emulator Running
         run: |
           source $GITHUB_ENV
           adb devices
 
-      # Instalar Appium y drivers necesarios
       - name: Install Appium
         run: |
           npm install -g appium
           npx appium driver install uiautomator2
 
-      # Validar instalación de adb antes de ejecutar Appium
-      - name: Validate adb Installation Before Appium
-        run: |
-          source $GITHUB_ENV
-          adb version || { echo "ADB not found before starting Appium"; exit 1; }
-
-      # Iniciar el servidor de Appium
       - name: Start Appium Server
         run: |
           source $GITHUB_ENV
@@ -109,7 +65,6 @@ jobs:
           sleep 10
           curl http://127.0.0.1:4723/wd/hub/status
 
-      # Ejecutar pruebas con Appium
       - name: Run Appium Tests
         run: |
           source $GITHUB_ENV
