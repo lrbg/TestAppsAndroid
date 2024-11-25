@@ -128,10 +128,11 @@ jobs:
       #    exit 1
 
 
-      - name: Test Appium Session Creation
+      # Asegurarse de que el servicio de Appium esté listo
+      - name: Ensure Appium Service is Ready
         run: |
           export APPIUM_URL=http://127.0.0.1:4723/wd/hub
-          for i in {1..30}; do
+          for i in {1..60}; do # Incrementamos a 60 intentos
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" $APPIUM_URL/status)
             if [ "$STATUS" -eq 200 ]; then
               echo "Appium service is ready."
@@ -142,6 +143,11 @@ jobs:
           done
           echo "Appium service did not become ready in time."
           exit 1
+
+      # En caso de fallo, revisar el log de Appium
+      - name: Check Appium Log
+        if: failure() # Solo se ejecuta si falla un paso previo
+        run: cat appium.log
 
 
 
