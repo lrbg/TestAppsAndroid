@@ -1,4 +1,4 @@
-name: Appium Test Workflow
+name: Android ADB Setup
 
 on:
   push:
@@ -7,17 +7,12 @@ on:
   pull_request:
 
 jobs:
-  setup-and-test:
+  setup-android:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
 
       - name: Setup Android SDK
         run: |
@@ -26,72 +21,18 @@ jobs:
           curl -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           unzip -q cmdline-tools.zip -d "$HOME/android-sdk/cmdline-tools"
           mv "$HOME/android-sdk/cmdline-tools/cmdline-tools" "$HOME/android-sdk/cmdline-tools/latest"
-          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH" >> $GITHUB_ENV
+          echo "export ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH" >> $GITHUB_ENV
           source $GITHUB_ENV
+          echo "Accepting licenses..."
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
+          echo "Installing platform-tools..."
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools"
 
-      - name: Validate Android SDK Setup
+      - name: Verify ADB Installation
         run: |
-          echo "Validating Android SDK setup..."
-          source $GITHUB_ENV
+          echo "Checking ADB installation..."
           echo "ANDROID_HOME is set to: $ANDROID_HOME"
           echo "PATH is set to: $PATH"
-          ls -al $ANDROID_HOME
-          ls -al $ANDROID_HOME/platform-tools || { echo "platform-tools directory not found"; exit 1; }
-          ls $ANDROID_HOME/platform-tools/adb || { echo "adb binary not found"; exit 1; }
-
-      - name: Install Node.js Dependencies
-        run: |
-          npm install
-
-      - name: Create and Start Emulator
-        run: |
-          echo "Creating and starting Android emulator..."
-          source $GITHUB_ENV
-          echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel_5"
-          $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu swiftshader_indirect -accel off -verbose &
-          sleep 120
-          adb wait-for-device || { echo "Emulator not started correctly"; exit 1; }
-
-      - name: Verify Emulator is Running
-        run: |
-          source $GITHUB_ENV
-          echo "Verifying emulator is running..."
-          adb devices || { echo "Emulator not detected"; exit 1; }
-
-      - name: Install Appium
-        run: |
-          echo "Installing Appium..."
-          npm install -g appium
-          npx appium driver install uiautomator2
-
-      - name: Validate adb Installation Before Appium
-        run: |
-          source $GITHUB_ENV
-          echo "Validating adb installation before Appium..."
-          adb version || { echo "ADB not found before starting Appium"; exit 1; }
-
-      - name: Start Appium Server
-        run: |
-          echo "Starting Appium server..."
-          source $GITHUB_ENV
-          npx appium --relaxed-security --base-path "/wd/hub" &
-          sleep 10
-          curl http://127.0.0.1:4723/wd/hub/status
-
-      - name: Debug PATH and Android SDK
-        run: |
-          echo "Debugging PATH and Android SDK..."
-          echo "Current PATH: $PATH"
-          echo "Contents of platform-tools:"
           ls -al $ANDROID_HOME/platform-tools
-          echo "Contents of emulator:"
-          ls -al $ANDROID_HOME/emulator
-
-      - name: Run Appium Tests
-        run: |
-          echo "Running Appium tests..."
-          source $GITHUB_ENV
-          BRAND=gfa npm run wdio
+          adb version || { echo "ADB not found or not working"; exit 1; }
