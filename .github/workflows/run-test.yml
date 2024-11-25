@@ -107,32 +107,22 @@ jobs:
       - name: Init appium service
         run: |
           nohup appium --relaxed-security --base-path "/wd/hub" > appium.log 2>&1 &
+          --log-level debug \
+          --log-timestamp \
+          --log-no-colors \
+          --log appium.log > appium_detailed.log 2>&1 &
           echo "Appium service init"
 
       # Validate Appium Driver Installation
       - name: Validate Appium Driver Installation
         run: appium driver list --installed
 
-      # Validar que el servicio de Appium está operativo
-      #- name: Wait for Appium Service
-      #  run: |
-      #    for i in {1..60}; do
-      #      if curl -s http://127.0.0.1:4723/wd/hub/status | grep -q '"ready":true'; then
-      #        echo "Appium service is ready"
-      #        exit 0
-      #      fi
-      #      echo "Waiting for Appium service to be ready... ($i)"
-      #      sleep 5
-      #    done
-      #    echo "Appium service did not become ready in time"
-      #    exit 1
 
-
-      # Asegurarse de que el servicio de Appium esté listo
-      - name: Ensure Appium Service is Ready
+      # Verificar el estado del servicio Appium y capturar logs en caso de fallo
+      - name: Validate Appium Service Status
         run: |
           export APPIUM_URL=http://127.0.0.1:4723/wd/hub
-          for i in {1..60}; do # Incrementamos a 60 intentos
+          for i in {1..30}; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" $APPIUM_URL/status)
             if [ "$STATUS" -eq 200 ]; then
               echo "Appium service is ready."
@@ -141,13 +131,29 @@ jobs:
             echo "Waiting for Appium service to be ready... ($i)"
             sleep 5
           done
-          echo "Appium service did not become ready in time."
+          echo "Appium service did not become ready in time. Logs:"
+          echo "------------------ appium.log ------------------"
+          cat appium.log || echo "appium.log not found"
+          echo "---------------- appium_detailed.log ----------------"
+          cat appium_detailed.log || echo "appium_detailed.log not found"
           exit 1
+        shell: bash
 
-      # En caso de fallo, revisar el log de Appium
-      - name: Check Appium Log
-        if: failure() # Solo se ejecuta si falla un paso previo
-        run: cat appium.log
+
+
+      - name: Archive and Display Full Logs on Failure
+        if: failure()
+        run: |
+          echo "Archiving logs for further analysis."
+          mkdir -p logs
+          mv appium.log logs/ || echo "appium.log not found for archiving."
+          mv appium_detailed.log logs/ || echo "appium_detailed.log not found for archiving."
+          echo "Logs archived. Displaying content:"
+          echo "------------------ appium.log ------------------"
+          cat logs/appium.log || echo "appium.log not available."
+          echo "---------------- appium_detailed.log ----------------"
+          cat logs/appium_detailed.log || echo "appium_detailed.log not available."
+        shell: bash
 
 
 
