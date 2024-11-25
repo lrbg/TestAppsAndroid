@@ -37,18 +37,26 @@ jobs:
 
     - name: Install Build Tools
       run: |
-        yes | sdkmanager "build-tools;31.0.0"
+        yes | sdkmanager "build-tools;31.0.0" "platform-tools" "platforms;android-31" "emulator"
 
     - name: Set environment variables
       run: |
         echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
         echo "PATH=$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/31.0.0:$PATH" >> $GITHUB_ENV
 
+    - name: Create AVD
+      run: |
+        echo "no" | avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel"
+        $ANDROID_HOME/emulator/emulator -list-avds
+
     - name: Start Android emulator
       run: |
-        $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-window -no-accel &
+        $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-window &
         adb wait-for-device
+        adb shell input keyevent 82
         adb devices
+      env:
+        ANDROID_HOME: ${{ env.ANDROID_HOME }}
 
     - name: Install dependencies
       run: npm install
