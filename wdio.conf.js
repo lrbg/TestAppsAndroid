@@ -61,9 +61,9 @@ exports.config = {
         //'appium:app': '/Users/luisrogelio/Documents/testAppReservamosJS/apk/gfa22112024.apk', 
         'appium:noReset': true, 
         'appium:newCommandTimeout': 600,
-        'appium:adbExecTimeout': 60000,
-        'appium:uiautomator2ServerInstallTimeout': 120000,
-        'appium:androidInstallTimeout': 120000
+        'appium:adbExecTimeout': 120000,
+        'appium:uiautomator2ServerInstallTimeout': 300000,
+        'appium:androidInstallTimeout': 300000,
     }],
 
     //
