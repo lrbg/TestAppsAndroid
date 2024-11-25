@@ -25,6 +25,12 @@ jobs:
         with:
           node-version: 18
 
+      - name: Download APK
+        run: |
+          mkdir -p ./apps
+          wget -O ./apps/gfa22112024.apk https://appsreservamos2024r1.s3.us-east-2.amazonaws.com/gfa22112024.apk
+          
+
 
       # Configurar Android SDK
       - name: Setup Android SDK

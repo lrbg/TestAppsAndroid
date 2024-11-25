@@ -57,13 +57,14 @@ exports.config = {
         platformName: 'Android',
         'appium:deviceName': 'emulator-5554',
         'appium:automationName': 'UiAutomator2',
-        'appium:app': 'https://appsreservamos2024r1.s3.us-east-2.amazonaws.com/gfa22112024.apk',
+        //'appium:app': 'https://appsreservamos2024r1.s3.us-east-2.amazonaws.com/gfa22112024.apk',
+        'appium:app': './apps/gfa22112024.apk',
         //'appium:app': '/Users/luisrogelio/Documents/testAppReservamosJS/apk/gfa22112024.apk', 
         'appium:noReset': true, 
         'appium:newCommandTimeout': 600,
-        'appium:adbExecTimeout': 120000,
-        'appium:uiautomator2ServerInstallTimeout': 300000,
-        'appium:androidInstallTimeout': 300000,
+        'appium:adbExecTimeout': 300000, // 5 minutos
+        'appium:uiautomator2ServerInstallTimeout': 600000, // 10 minutos
+        'appium:androidInstallTimeout': 600000, // 10 minutos
     }],
 
     //
