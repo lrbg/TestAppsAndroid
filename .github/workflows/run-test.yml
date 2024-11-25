@@ -34,19 +34,19 @@ jobs:
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
 
-      # 4. Validar la existencia de package.json
+      # 4. Validar instalación de adb inmediatamente después de configurarlo
+      - name: Validate adb Installation
+        run: |
+          source $GITHUB_ENV
+          adb version || { echo "ADB not found in PATH after SDK setup"; exit 1; }
+
+      # 5. Validar la existencia de package.json
       - name: Validate package.json presence
         run: |
           if [ ! -f package.json ]; then
             echo "package.json not found in $(pwd)"
             exit 1
           fi
-
-      # 5. Validar instalación de adb
-      - name: Validate adb Installation
-        run: |
-          source $GITHUB_ENV
-          adb version || { echo "ADB not found in PATH"; exit 1; }
 
       # 6. Instalar dependencias de Node.js
       - name: Install Node.js Dependencies
@@ -65,7 +65,7 @@ jobs:
       # 8. Verificar que el emulador está en ejecución
       - name: Verify Emulator is Running
         run: |
-          adb devices
+          adb devices || { echo "Emulator verification failed"; exit 1; }
 
       # 9. Instalar Appium y drivers necesarios
       - name: Install Appium
