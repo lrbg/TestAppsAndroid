@@ -10,6 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Clonar el repositorio
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
       # Instalar dependencias necesarias
       - name: Install Dependencies
         run: |
@@ -87,8 +91,9 @@ jobs:
           npm install -g appium-doctor
           appium-doctor
 
-      # Instalar dependencias del proyecto E2E
-      - name: Install E2E Project Dependencies
+      # Instalar dependencias del proyecto
+      - name: Install Project Dependencies
+        working-directory: . # Define la raíz como directorio de trabajo
         run: |
           npm install
 
