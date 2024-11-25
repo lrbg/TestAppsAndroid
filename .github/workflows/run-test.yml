@@ -106,11 +106,10 @@ jobs:
       # Iniciar appium service
       - name: Init appium service
         run: |
-          nohup appium --relaxed-security --base-path "/wd/hub" > appium.log 2>&1 &
+          nohup appium --relaxed-security --base-path "/wd/hub" \
           --log-level debug \
           --log-timestamp \
-          --log-no-colors \
-          --log appium.log > appium_detailed.log 2>&1 &
+          --log-no-colors > appium_detailed.log 2>&1 &
           echo "Appium service init"
 
       # Validate Appium Driver Installation
