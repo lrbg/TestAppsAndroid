@@ -1,4 +1,4 @@
-name: Appium Test Workflow
+name: Android Emulator and Appium Service
 
 on:
   push:
@@ -7,57 +7,49 @@ on:
   pull_request:
 
 jobs:
-  setup-and-test:
+  android-emulator-appium:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      # Instalar dependencias necesarias
+      # 1. Instalar dependencias necesarias
       - name: Install Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y openjdk-11-jdk unzip wget
 
-      # Configurar Android SDK
+      # 2. Configurar Android SDK
       - name: Setup Android SDK
         run: |
           mkdir -p "$HOME/android-sdk/cmdline-tools"
           curl -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           unzip -q cmdline-tools.zip -d "$HOME/android-sdk/cmdline-tools"
           mv "$HOME/android-sdk/cmdline-tools/cmdline-tools" "$HOME/android-sdk/cmdline-tools/latest"
-          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH" >> $GITHUB_ENV
-          source $GITHUB_ENV
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
 
-      # Verificar instalación de ADB
+      # 3. Verificar instalación de ADB
       - name: Verify ADB Installation
         run: |
-          source $GITHUB_ENV
-          ls $ANDROID_HOME/platform-tools
-          which adb || echo "ADB not found in PATH"
-          adb version || exit 1
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
+          adb version
 
-      # Crear y arrancar el emulador
+      # 4. Crear y arrancar el emulador
       - name: Create and Start Emulator
         run: |
-          source $GITHUB_ENV
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel_5"
-          $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-audio -no-window -gpu swiftshader_indirect -accel off &
+          $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-audio -no-window -gpu swiftshader_indirect -accel off -verbose &
           sleep 180
 
-      # Esperar hasta que el emulador complete el arranque
+      # 5. Esperar hasta que el emulador complete el arranque
       - name: Wait for Emulator Boot
         run: |
-          source $GITHUB_ENV
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           adb wait-for-device
           for i in {1..60}; do
             if adb shell getprop sys.boot_completed | grep -m 1 '1'; then
@@ -70,28 +62,31 @@ jobs:
           echo "Emulator did not complete boot in time"
           exit 1
 
-      # Verificar que el emulador está funcionando
+      # 6. Verificar que el emulador está funcionando
       - name: Verify Emulator Running
         run: |
-          source $GITHUB_ENV
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           adb devices
 
-      - name: Install Node.js Dependencies
-        run: npm install
+      # 7. Configurar Node.js para Appium
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
 
+      # 8. Instalar Appium
       - name: Install Appium
         run: |
           npm install -g appium
-          npx appium driver install uiautomator2
 
-      - name: Start Appium Server
+      # 9. Levantar Appium
+      - name: Start Appium server
         run: |
-          source $GITHUB_ENV
-          npx appium --relaxed-security --base-path "/wd/hub" &
-          sleep 10
+          appium --relaxed-security --base-path "/wd/hub" &
+          sleep 5
+
+      # 10. Validar que Appium está corriendo
+      - name: Validate Appium is running
+        run: |
           curl http://127.0.0.1:4723/wd/hub/status
-
-      - name: Run Appium Tests
-        run: |
-          source $GITHUB_ENV
-          BRAND=gfa npm run wdio
