@@ -51,8 +51,8 @@ jobs:
           echo "Creating and starting Android emulator..."
           source $GITHUB_ENV
           echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel_5"
-          $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu swiftshader_indirect -accel off &
-          sleep 90
+          $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu swiftshader_indirect -accel off -verbose &
+          sleep 120
           adb wait-for-device || { echo "Emulator not started correctly"; exit 1; }
 
       - name: Verify Emulator is Running
