@@ -8,7 +8,7 @@ on:
 jobs:
   android-setup:
     runs-on: ubuntu-latest
-    timeout-minutes: 45  # Añadir timeout global del job
+    timeout-minutes: 45
 
     steps:
       - name: Checkout Repository
@@ -22,163 +22,141 @@ jobs:
           npm --version
           echo "Memory Status:"
           free -h
-          echo "Disk Space:"
-          df -h
-          echo "CPU Info:"
-          lscpu
 
       - name: Install Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y openjdk-11-jdk unzip wget curl lsof net-tools android-tools-adb
           sudo apt-get clean
-          sudo rm -rf /var/lib/apt/lists/*
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
-          cache: 'npm'  # Habilitar caché de npm
+          cache: 'npm'
 
-      # Implementar caché para Android SDK
-      - name: Cache Android SDK
-        uses: actions/cache@v3
-        with:
-          path: |
-            $HOME/android-sdk
-            ~/.android
-          key: ${{ runner.os }}-android-sdk-${{ hashFiles('**/build.gradle') }}
-          restore-keys: |
-            ${{ runner.os }}-android-sdk-
-
-      - name: Download APK
+      # Configuración mejorada de Android SDK
+      - name: Setup Android SDK
         run: |
-          mkdir -p ./apps
-          wget --retry-connrefused --waitretry=1 --read-timeout=20 --timeout=15 -t 10 -O ./apps/gfa22112024.apk https://appsreservamos2024r1.s3.us-east-2.amazonaws.com/gfa22112024.apk
-          ls -l ./apps/gfa22112024.apk
+          # Crear directorios necesarios
+          mkdir -p "$HOME/android-sdk/cmdline-tools"
+          cd "$HOME/android-sdk/cmdline-tools"
 
-      - name: Check Appium Port and Kill Processes
+          # Descargar y extraer Android Command Line Tools
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          unzip -q commandlinetools-linux-9477386_latest.zip
+          mv cmdline-tools latest
+
+          # Configurar variables de entorno
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$HOME/android-sdk/emulator:$PATH" >> $GITHUB_ENV
+
+          # Verificar la instalación
+          ls -la $HOME/android-sdk/cmdline-tools/latest/bin/
+
+      # Configuración de Android SDK Components
+      - name: Install Android SDK Components
         run: |
-          sudo lsof -t -i:4723 | xargs -r sudo kill -9
-          echo "Port 4723 cleared"
-          sleep 5
+          # Verificar variables de entorno
+          echo "ANDROID_HOME: $ANDROID_HOME"
+          echo "PATH: $PATH"
+          
+          # Aceptar licencias
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          
+          # Instalar componentes necesarios
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --update
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+            "platform-tools" \
+            "platforms;android-30" \
+            "system-images;android-30;google_apis;x86_64" \
+            "build-tools;30.0.3"
 
-      # Resto de la configuración Android SDK...
-      # [Los pasos anteriores se mantienen igual hasta el inicio del emulador]
+          # Verificar instalación
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list_installed
 
-      - name: Create and Start Emulator
+      - name: Create and Start Android Emulator
         run: |
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
-          
-          echo "Creating AVD..."
-          echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-30;default;x86_64" --device "pixel_5" --force
-          
-          echo "Starting emulator..."
-          nohup $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-audio -no-window -gpu swiftshader_indirect -accel off -verbose > emulator.log 2>&1 &
-          
-          echo "Waiting for emulator startup..."
-          sleep 30  # Tiempo inicial de espera
+          # Verificar entorno
+          echo "ANDROID_HOME: $ANDROID_HOME"
+          echo "Current directory: $(pwd)"
+          echo "Available system images:"
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list | grep system-images
 
-      - name: Wait for Emulator Boot with Enhanced Logging
-        timeout-minutes: 10
+          # Crear AVD
+          echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd \
+            -n test \
+            -k "system-images;android-30;google_apis;x86_64" \
+            --force \
+            --device "pixel_5"
+
+          # Verificar AVD creado
+          $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager list avd
+
+          # Iniciar emulador
+          nohup $ANDROID_HOME/emulator/emulator \
+            -avd test \
+            -no-audio \
+            -no-window \
+            -gpu swiftshader_indirect \
+            -no-snapshot \
+            -noaudio \
+            -no-boot-anim \
+            > emulator.log 2>&1 &
+
+          # Esperar que inicie
+          sleep 30
+
+      - name: Wait for Emulator Boot
         run: |
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
-          
           max_attempts=30
           attempt=0
           
           while [ $attempt -lt $max_attempts ]; do
             if adb shell getprop sys.boot_completed 2>&1 | grep -q '1'; then
-              echo "✓ Emulator booted successfully"
-              adb shell getprop | grep -e "model" -e "version"
-              adb shell settings list system
-              exit 0
+              echo "Emulator booted successfully"
+              adb devices -l
+              break
             fi
-            
             echo "Waiting for emulator... Attempt $((attempt+1))/$max_attempts"
-            adb shell getprop sys.boot_completed
             sleep 10
             attempt=$((attempt+1))
           done
-          
-          echo "× Emulator boot failed. Logs:"
-          cat emulator.log
-          exit 1
 
-      - name: Setup Appium
+      - name: Install and Configure Appium
         run: |
           npm install -g appium@next
-          npm install -g appium-doctor
-          
-          echo "Running Appium doctor..."
-          appium-doctor --android
-          
-          echo "Installing Appium driver..."
           appium driver install uiautomator2
           
-          echo "Installed drivers:"
-          appium driver list --installed
-
-      - name: Start and Verify Appium Service
-        run: |
+          # Iniciar Appium
           mkdir -p logs
-          
-          echo "Starting Appium server..."
           nohup appium \
             --relaxed-security \
             --base-path "/wd/hub" \
             --log-level debug \
-            --log-timestamp \
-            --allow-insecure chromedriver_autodownload \
-            > logs/appium_server.log 2>&1 &
+            > logs/appium.log 2>&1 &
+            
+          # Esperar que Appium inicie
+          sleep 10
           
-          echo "Waiting for Appium server startup..."
-          sleep 15
-          
-          # Verificar estado del servidor
-          for i in {1..10}; do
-            if curl -s http://127.0.0.1:4723/wd/hub/status | grep -q "ready"; then
-              echo "✓ Appium server is running"
-              break
-            fi
-            echo "Waiting for Appium server... Attempt $i/10"
-            sleep 5
-          done
-          
-          # Mostrar procesos y puertos
-          echo "Active processes:"
-          ps aux | grep appium
-          echo "Port status:"
-          netstat -tulpn | grep 4723
+          # Verificar estado
+          curl --retry 5 --retry-delay 2 http://127.0.0.1:4723/wd/hub/status
 
-      - name: Install Project Dependencies
+      - name: Run E2E Tests
         run: |
-          npm ci
-          npm list
-
-      - name: Run E2E Tests with Enhanced Logging
-        run: |
-          echo "Environment variables:"
-          env | grep -i android
-          echo "Device list:"
+          # Verificar estado del entorno
           adb devices -l
-          echo "Starting tests..."
-          BRAND=gfa DEBUG=true APPIUM_LOG=debug npm run wdio
-        env:
-          CI: true
-          FORCE_COLOR: true
+          ps aux | grep appium
+          
+          # Ejecutar pruebas
+          BRAND=gfa npm run wdio
 
-      - name: Capture Logs on Failure
-        if: failure()
-        run: |
-          echo "=== Appium Server Logs ==="
-          cat logs/appium_server.log || true
-          echo "=== Emulator Logs ==="
-          cat emulator.log || true
-          echo "=== ADB Logs ==="
-          adb logcat -d || true
-          echo "=== System Resources ==="
-          free -h
-          top -bn1
+      - name: Upload Logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-logs
+          path: |
+            logs/
+            emulator.log
+            ~/.android/avd/
