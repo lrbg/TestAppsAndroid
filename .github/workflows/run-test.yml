@@ -1,19 +1,23 @@
-name: Start Android Emulator
+name: Appium Test Workflow
 
 on:
   push:
     branches:
       - main
+  pull_request:
 
 jobs:
-  start-android-emulator:
+  setup-and-test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y openjdk-11-jdk unzip wget
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
 
       - name: Setup Android SDK
         run: |
@@ -25,6 +29,18 @@ jobs:
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
+          adb version || { echo "ADB not found after setup"; exit 1; }
+
+      - name: Validate package.json presence
+        run: |
+          if [ ! -f package.json ]; then
+            echo "package.json not found in $(pwd)"
+            exit 1
+          fi
+
+      - name: Install Node.js Dependencies
+        run: |
+          npm install
 
       - name: Create and Start Emulator
         run: |
@@ -32,11 +48,36 @@ jobs:
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel_5"
           $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu swiftshader_indirect -accel off &
-          sleep 60
-          $ANDROID_HOME/platform-tools/adb wait-for-device
+          sleep 90
+          adb wait-for-device || { echo "Emulator not started correctly"; exit 1; }
 
-      - name: Verify Emulator
+      - name: Verify Emulator is Running
         run: |
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
-          adb devices
+          adb devices || { echo "Emulator verification failed"; exit 1; }
+
+      - name: Install Appium
+        run: |
+          npm install -g appium
+          npx appium driver install uiautomator2
+
+      - name: Validate adb Installation Before Appium
+        run: |
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
+          adb version || { echo "ADB not found before starting Appium"; exit 1; }
+
+      - name: Start Appium Server
+        run: |
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
+          npx appium --relaxed-security --base-path "/wd/hub" &
+          sleep 10
+          curl http://127.0.0.1:4723/wd/hub/status || { echo "Appium server failed to start"; exit 1; }
+
+      - name: Run Appium Tests
+        run: |
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
+          BRAND=gfa npm run wdio
