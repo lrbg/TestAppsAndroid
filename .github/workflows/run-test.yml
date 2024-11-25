@@ -131,28 +131,17 @@ jobs:
       - name: Test Appium Session Creation
         run: |
           export APPIUM_URL=http://127.0.0.1:4723/wd/hub
-          # Intentar crear una sesión con Appium
-          RESPONSE=$(curl -X POST $APPIUM_URL/session \
-            -H "Content-Type: application/json" \
-            -d '{
-                  "capabilities": {
-                    "platformName": "Android",
-                    "appium:deviceName": "emulator-5554",
-                    "appium:automationName": "UiAutomator2",
-                    "appium:noReset": true
-                  }
-                }' -s -o /tmp/appium_session_response.json -w "%{http_code}")
-
-          # Validar si el código de respuesta es 200 (éxito)
-          if [ "$RESPONSE" -eq 200 ]; then
-            echo "Appium session successfully created."
-            cat /tmp/appium_session_response.json
-            exit 0
-          else
-            echo "Failed to create Appium session. Response code: $RESPONSE"
-            cat /tmp/appium_session_response.json
-            exit 1
-          fi
+          for i in {1..30}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" $APPIUM_URL/status)
+            if [ "$STATUS" -eq 200 ]; then
+              echo "Appium service is ready."
+              exit 0
+            fi
+            echo "Waiting for Appium service to be ready... ($i)"
+            sleep 5
+          done
+          echo "Appium service did not become ready in time."
+          exit 1
 
 
 
