@@ -25,38 +25,31 @@ jobs:
           curl -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           unzip -q cmdline-tools.zip -d "$HOME/android-sdk/cmdline-tools"
           mv "$HOME/android-sdk/cmdline-tools/cmdline-tools" "$HOME/android-sdk/cmdline-tools/latest"
-          echo "export ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH" >> $GITHUB_ENV
-          source $GITHUB_ENV
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
 
           # Aceptar licencias y descargar herramientas necesarias
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
 
-          # Validar si adb está instalado
+          # Validar si adb se encuentra en el sistema
           if [ ! -f "$ANDROID_HOME/platform-tools/adb" ]; then
-            echo "adb binary not found in expected location: $ANDROID_HOME/platform-tools"
+            echo "adb binary not found after installation. Exiting."
             exit 1
           fi
+          
+          # Probar adb directamente con la ruta completa
+          $ANDROID_HOME/platform-tools/adb version
 
-      - name: Export Environment Variables
+      - name: Re-export Environment Variables
         run: |
-          echo "Re-exporting environment variables..."
           echo "export ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
           echo "export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH" >> $GITHUB_ENV
           source $GITHUB_ENV
 
-      - name: Validate package.json presence
-        run: |
-          if [ ! -f package.json ]; then
-            echo "package.json not found in $(pwd)"
-            exit 1
-          fi
-
       - name: Validate adb Installation
         run: |
-          echo "Checking adb version..."
-          adb version || { echo "ADB not found in PATH"; exit 1; }
+          adb version || { echo "ADB not found in PATH after setup"; exit 1; }
 
       - name: Install Node.js Dependencies
         run: |
