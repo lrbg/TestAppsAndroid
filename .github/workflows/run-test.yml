@@ -9,7 +9,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    # 1. Configurar el entorno
+    # 1. Configurar el entornos
     - name: Configurar Android SDK y entorno
       run: |
         export ANDROID_HOME=$HOME/android-sdk
