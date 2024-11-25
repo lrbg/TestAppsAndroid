@@ -24,8 +24,9 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y unzip wget
         wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip -O cmdline-tools.zip
-        unzip cmdline-tools.zip -d $ANDROID_HOME
-        mv $ANDROID_HOME/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+        mkdir -p $ANDROID_HOME/cmdline-tools
+        unzip cmdline-tools.zip -d $ANDROID_HOME/cmdline-tools
+        mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
         rm cmdline-tools.zip
 
     - name: Install System Images and Create AVD
