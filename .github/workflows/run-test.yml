@@ -67,23 +67,22 @@ jobs:
           echo "Emulator did not complete boot in time"
           exit 1
 
-      # Validar que el emulador está funcionando correctamente
+      # Verificar que el emulador está funcionando
       - name: Verify Emulator Running
         run: |
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           adb devices
 
-      # Validar configuración de Appium
-      - name: Validate Appium Setup
+      # Instalar Appium
+      - name: Install Appium
         run: |
           npm install -g appium
           appium --version
           echo "Appium setup validated successfully"
 
-      # Verificar conectividad entre Appium y el emulador
-      - name: Validate Appium with Emulator
+      # Instalar appium-doctor
+      - name: Install Appium Doctor
         run: |
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
-          appium-doctor --android
+          npm install -g appium-doctor
+          appium-doctor
