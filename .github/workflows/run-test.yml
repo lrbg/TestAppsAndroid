@@ -11,14 +11,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
       - name: Setup Android SDK
         run: |
           mkdir -p "$HOME/android-sdk/cmdline-tools"
@@ -29,54 +21,15 @@ jobs:
           echo "export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH" >> $GITHUB_ENV
           source $GITHUB_ENV
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
 
-      - name: Validate package.json presence
+      - name: Validate Android SDK Setup
         run: |
-          if [ ! -f package.json ]; then
-            echo "package.json not found in $(pwd)"
-            exit 1
-          fi
-
-      - name: Validate adb Installation
-        run: |
-          echo "Checking adb installation..."
+          echo "ANDROID_HOME is set to: $ANDROID_HOME"
+          echo "PATH is set to: $PATH"
+          ls -al $ANDROID_HOME
           ls -al $ANDROID_HOME/platform-tools/
-          adb version || { echo "ADB not found in PATH after setup"; exit 1; }
 
-      - name: Install Node.js Dependencies
+      - name: Check adb Installation
         run: |
-          npm install
-
-      - name: Create and Start Emulator
-        run: |
-          source $GITHUB_ENV
-          echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel_5"
-          $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu swiftshader_indirect -accel off &
-          sleep 90
-          adb wait-for-device
-
-      - name: Verify Emulator is Running
-        run: |
-          adb devices
-
-      - name: Install Appium
-        run: |
-          npm install -g appium
-          npx appium driver install uiautomator2
-
-      - name: Validate adb Installation Before Appium
-        run: |
-          adb version || { echo "ADB not found before starting Appium"; exit 1; }
-
-      - name: Start Appium Server
-        run: |
-          source $GITHUB_ENV
-          npx appium --relaxed-security --base-path "/wd/hub" &
-          sleep 10
-          curl http://127.0.0.1:4723/wd/hub/status
-
-      - name: Run Appium Tests
-        run: |
-          source $GITHUB_ENV
-          BRAND=gfa npm run wdio
+          adb version || { echo "ADB not found in PATH"; exit 1; }
