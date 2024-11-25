@@ -1,80 +1,40 @@
-name: Android Appium Tests
+name: Setup Android SDK and AVD
 
 on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 
 jobs:
-  android-tests:
+  setup-android:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18.x'
-
-    - name: Install Java
+    - name: Set up JDK
       uses: actions/setup-java@v3
       with:
         distribution: 'zulu'
         java-version: '11'
 
-    - name: Set up Android SDK
-      uses: android-actions/setup-android@v2
-      with:
-        api-level: 31
-        build-tools: 31.0.0
-        target: default
-        ndk: '23.1.7779620'
-
-    - name: Install required Android packages
+    - name: Install Android SDK
       run: |
-        yes | sdkmanager --licenses
-        sdkmanager "build-tools;31.0.0" "platform-tools" "platforms;android-31" "system-images;android-31;default;x86_64" "emulator"
-
-    - name: Set environment variables
-      run: |
+        mkdir -p $HOME/android-sdk
         echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-        echo "PATH=$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/31.0.0:$PATH" >> $GITHUB_ENV
+        echo "PATH=$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH" >> $GITHUB_ENV
+        sudo apt-get update
+        sudo apt-get install -y unzip wget
+        wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip -O cmdline-tools.zip
+        unzip cmdline-tools.zip -d $ANDROID_HOME
+        mv $ANDROID_HOME/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+        rm cmdline-tools.zip
 
-    - name: Create AVD
+    - name: Install System Images and Create AVD
       run: |
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-31" "system-images;android-31;default;x86_64" "emulator"
         echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel"
-        $ANDROID_HOME/emulator/emulator -list-avds
 
-    - name: Start Android emulator
+    - name: Start Emulator
       run: |
         $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-window &
         adb wait-for-device
-        adb shell input keyevent 82
         adb devices
-      env:
-        ANDROID_HOME: ${{ env.ANDROID_HOME }}
-
-    - name: Install dependencies
-      run: npm install
-
-    - name: Install Appium globally
-      run: npm install -g appium
-
-    - name: Install Appium UIAutomator2 Driver
-      run: appium driver install uiautomator2
-
-    - name: Start Appium server
-      run: appium --base-path /wd/hub --relaxed-security &
-      env:
-        PATH: ${{ env.PATH }}
-
-    - name: Run tests
-      run: |
-        BRAND=gfa yarn wdio
-      env:
-        PATH: ${{ env.PATH }}
