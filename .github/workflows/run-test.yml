@@ -1,3 +1,13 @@
+name: Appium Test Workflow
+
+on:
+  push:
+    branches:
+      - main  # Ejecuta el flujo al hacer push en la rama `main`
+  pull_request:
+    branches:
+      - main  # Ejecuta el flujo al abrir un pull request hacia la rama `main`
+
 jobs:
   setup-and-test:
     runs-on: ubuntu-latest
@@ -40,3 +50,21 @@ jobs:
           $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu swiftshader_indirect -accel off &
           sleep 60
           $ANDROID_HOME/platform-tools/adb wait-for-device
+
+      - name: Install Appium
+        run: |
+          npm install -g appium
+          npx appium driver install uiautomator2
+
+      - name: Start Appium server
+        run: |
+          npx appium --relaxed-security --base-path "/wd/hub" &
+          sleep 5
+          curl http://127.0.0.1:4723/wd/hub/status
+
+      - name: Run Appium Tests
+        run: |
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
+          npm install
+          BRAND=gfa npm run wdio
