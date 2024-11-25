@@ -1,4 +1,4 @@
-name: Android Emulator and Appium Service
+name: Android Emulator and Appium Service with E2E Tests
 
 on:
   push:
@@ -11,13 +11,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Instalar dependencias necesarias
+      # 1. Checkout del repositorio
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # 2. Instalar dependencias necesarias para Android
       - name: Install Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y openjdk-11-jdk unzip wget
 
-      # 2. Configurar Android SDK
+      # 3. Configurar Android SDK
       - name: Setup Android SDK
         run: |
           mkdir -p "$HOME/android-sdk/cmdline-tools"
@@ -29,14 +33,14 @@ jobs:
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
 
-      # 3. Verificar instalación de ADB
+      # 4. Verificar instalación de ADB
       - name: Verify ADB Installation
         run: |
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           adb version
 
-      # 4. Crear y arrancar el emulador
+      # 5. Crear y arrancar el emulador
       - name: Create and Start Emulator
         run: |
           export ANDROID_HOME=$HOME/android-sdk
@@ -45,7 +49,7 @@ jobs:
           $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-audio -no-window -gpu swiftshader_indirect -accel off -verbose &
           sleep 180
 
-      # 5. Esperar hasta que el emulador complete el arranque
+      # 6. Esperar hasta que el emulador complete el arranque
       - name: Wait for Emulator Boot
         run: |
           export ANDROID_HOME=$HOME/android-sdk
@@ -62,31 +66,41 @@ jobs:
           echo "Emulator did not complete boot in time"
           exit 1
 
-      # 6. Verificar que el emulador está funcionando
+      # 7. Verificar que el emulador está funcionando
       - name: Verify Emulator Running
         run: |
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           adb devices
 
-      # 7. Configurar Node.js para Appium
+      # 8. Configurar Node.js para Appium
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      # 8. Instalar Appium
+      # 9. Instalar dependencias del proyecto
+      - name: Install Node.js Dependencies
+        run: |
+          npm install
+
+      # 10. Instalar Appium
       - name: Install Appium
         run: |
           npm install -g appium
 
-      # 9. Levantar Appium
+      # 11. Levantar Appium
       - name: Start Appium server
         run: |
           appium --relaxed-security --base-path "/wd/hub" &
           sleep 5
 
-      # 10. Validar que Appium está corriendo
+      # 12. Validar que Appium está corriendo
       - name: Validate Appium is running
         run: |
           curl http://127.0.0.1:4723/wd/hub/status
+
+      # 13. Ejecutar pruebas E2E
+      - name: Run Appium Tests
+        run: |
+          BRAND=gfa npm run wdio
