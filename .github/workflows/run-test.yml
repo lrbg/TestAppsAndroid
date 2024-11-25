@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Instalar dependencias necesarias
+      # Instalar dependencias
       - name: Install Dependencies
         run: |
           sudo apt-get update
@@ -28,29 +28,22 @@ jobs:
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
 
-      # Verificar instalación de ADB
-      - name: Verify ADB Installation
-        run: |
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
-          adb version
-
-      # Crear y arrancar el emulador
+      # Crear y arrancar emulador
       - name: Create and Start Emulator
         run: |
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel_5"
-          $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-audio -no-window -gpu swiftshader_indirect -accel off -verbose &
-          sleep 180
+          $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-audio -no-window -gpu swiftshader_indirect -accel off &
+          sleep 90
 
-      # Esperar hasta que el emulador complete el arranque
+      # Esperar el arranque completo del emulador
       - name: Wait for Emulator Boot
         run: |
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           adb wait-for-device
-          for i in {1..60}; do
+          for i in {1..30}; do
             if adb shell getprop sys.boot_completed | grep -m 1 '1'; then
               echo "Emulator boot completed"
               exit 0
@@ -61,7 +54,7 @@ jobs:
           echo "Emulator did not complete boot in time"
           exit 1
 
-      # Verificar que el emulador está funcionando
+      # Verificar dispositivos conectados
       - name: Verify Emulator Running
         run: |
           export ANDROID_HOME=$HOME/android-sdk
