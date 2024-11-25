@@ -14,11 +14,20 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      # Diagnóstico detallado del sistema
+      - name: System Diagnostics
+        run: |
+          echo "Node.js version:"
+          node --version
+          
+          echo "NPM version:"
+          npm --version
+
       # Instalar dependencias necesarias
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y openjdk-11-jdk unzip wget curl
+          sudo apt-get install -y openjdk-11-jdk unzip wget curl lsof net-tools
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -30,6 +39,16 @@ jobs:
           mkdir -p ./apps
           wget -O ./apps/gfa22112024.apk https://appsreservamos2024r1.s3.us-east-2.amazonaws.com/gfa22112024.apk
           ls -l ./apps/gfa22112024.apk
+
+      # Verificar puerto antes de configurar
+      - name: Check Appium Port
+        run: |
+          # Verificar si el puerto 4723 está libre
+          if lsof -i :4723; then
+            echo "Port 4723 is already in use"
+            lsof -i :4723
+            exit 1
+          fi
 
       # Configurar Android SDK
       - name: Setup Android SDK
@@ -48,7 +67,6 @@ jobs:
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-30" "system-images;android-30;default;x86_64" "emulator" "build-tools;30.0.3"
-
 
       # Validar instalación de ADB
       - name: Verify ADB Installation
@@ -90,90 +108,103 @@ jobs:
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           adb devices
 
-      # Instalar Appium
+      # Instalar Appium con información detallada
       - name: Install Appium
         run: |
           npm install -g appium
           appium --version
           echo "Appium setup validated successfully"
+          echo "Appium global location:"
+          which appium
 
-      # Install Appium driver uiautomator2
+      # Instalar driver uiautomator2 con diagnóstico
       - name: Install Appium Driver
         run: |
           appium driver install uiautomator2
-          echo "Install Appium driver uiautomator2"
+          echo "Appium driver installation details:"
+          appium driver list
 
-      # Iniciar appium service
-      - name: Init appium service
+      # Iniciar servicio Appium con más diagnóstico
+      - name: Init Appium Service
         run: |
-          nohup appium --relaxed-security --base-path "/wd/hub" \
+          mkdir -p logs
+          nohup appium \
+          --relaxed-security \
+          --base-path "/wd/hub" \
           --log-level debug \
           --log-timestamp \
-          --log-no-colors > appium_detailed.log 2>&1 &
-          echo "Appium service init"
+          --log-no-colors > logs/appium_server.log 2>&1 &
+          
+          # Mostrar PID del servicio
+          echo "Appium service started with PID $!"
+          
+          # Esperar inicio
+          sleep 30
+          
+          # Verificar procesos
+          ps aux | grep appium
 
-      # Validate Appium Driver Installation
-      - name: Validate Appium Driver Installation
-        run: appium driver list --installed
-
-
-      # Verificar el estado del servicio Appium y capturar logs en caso de fallo
+      # Validación más robusta del servicio Appium
       - name: Validate Appium Service Status
         run: |
           export APPIUM_URL=http://127.0.0.1:4723/wd/hub
-          for i in {1..30}; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" $APPIUM_URL/status)
+          
+          # Verificar procesos de Appium
+          ps aux | grep appium
+          
+          # Intentar conexión múltiples veces
+          max_attempts=10
+          attempt=0
+          
+          while [ $attempt -lt $max_attempts ]; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" $APPIUM_URL/status || echo "000")
+            
             if [ "$STATUS" -eq 200 ]; then
-              echo "Appium service is ready."
+              echo "Appium service is ready. Status code: $STATUS"
               exit 0
             fi
-            echo "Waiting for Appium service to be ready... ($i)"
-            sleep 5
+            
+            echo "Appium service not ready. Status code: $STATUS. Attempt $((attempt+1))/$max_attempts"
+            sleep 10
+            attempt=$((attempt+1))
           done
-          echo "Appium service did not become ready in time. Logs:"
-          echo "------------------ appium.log ------------------"
-          cat appium.log || echo "appium.log not found"
-          echo "---------------- appium_detailed.log ----------------"
-          cat appium_detailed.log || echo "appium_detailed.log not found"
+          
+          echo "Appium service did not become ready in time."
+          
+          # Mostrar logs en caso de fallo
+          echo "Appium Server Logs:"
+          cat logs/appium_server.log
+          
           exit 1
         shell: bash
 
-
-
-      - name: Archive and Display Full Logs on Failure
+      # Manejo de errores con más información
+      - name: Archive Logs on Failure
         if: failure()
         run: |
           echo "Archiving logs for further analysis."
-          mkdir -p logs
-          mv appium.log logs/ || echo "appium.log not found for archiving."
-          mv appium_detailed.log logs/ || echo "appium_detailed.log not found for archiving."
-          echo "Logs archived. Displaying content:"
-          echo "------------------ appium.log ------------------"
-          cat logs/appium.log || echo "appium.log not available."
-          echo "---------------- appium_detailed.log ----------------"
-          cat logs/appium_detailed.log || echo "appium_detailed.log not available."
+          mkdir -p artifact_logs
+          
+          # Copiar logs relevantes
+          cp logs/appium_server.log artifact_logs/ || echo "No Appium server log found"
+          cp appium_detailed.log artifact_logs/ || echo "No detailed Appium log found"
+          
+          # Mostrar contenido de logs
+          echo "=============== Appium Server Log ==============="
+          cat artifact_logs/appium_server.log || echo "No server log available"
+          
+          echo "=============== Detailed Appium Log ============="
+          cat appium_detailed.log || echo "No detailed log available"
         shell: bash
-
-
-
-      # Instalar appium-doctor
-      #- name: Install Appium Doctor
-      #  run: |
-      #    npm install -g appium-doctor
-      #    appium-doctor
 
       # Verificar que Appium está ejecutándose
       - name: Verify Appium is Running
         run: curl http://127.0.0.1:4723/wd/hub/status || (echo "Appium failed to start" && exit 1)
 
-
       # Instalar dependencias del proyecto
       - name: Install Project Dependencies
-        working-directory: . # Define la raíz como directorio de trabajo
-        run: |
-          npm install
+        run: npm install
 
       # Ejecutar pruebas E2E
       - name: Run E2E Tests
-        run: |
-          BRAND=gfa npm run wdio
+        run: BRAND=gfa npm run wdio
