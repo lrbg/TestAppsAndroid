@@ -28,8 +28,17 @@ jobs:
           echo "export ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
           echo "export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH" >> $GITHUB_ENV
           source $GITHUB_ENV
+
+          # Aceptar licencias y descargar herramientas necesarias
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
+
+          # Verificar si adb está correctamente instalado
+          if ! command -v adb &> /dev/null; then
+            echo "adb command not found even after installation. Debugging PATH:"
+            echo $PATH
+            exit 1
+          fi
 
       - name: Validate package.json presence
         run: |
@@ -40,7 +49,6 @@ jobs:
 
       - name: Validate adb Installation
         run: |
-          source $GITHUB_ENV
           adb version || { echo "ADB not found in PATH"; exit 1; }
 
       - name: Install Node.js Dependencies
@@ -66,7 +74,6 @@ jobs:
 
       - name: Validate adb Installation Before Appium
         run: |
-          source $GITHUB_ENV
           adb version || { echo "ADB not found before starting Appium"; exit 1; }
 
       - name: Start Appium Server
