@@ -19,6 +19,13 @@ jobs:
         with:
           node-version: 18
 
+      # Instalar dependencias necesarias
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openjdk-11-jdk unzip wget
+
+      # Configurar Android SDK
       - name: Setup Android SDK
         run: |
           mkdir -p "$HOME/android-sdk/cmdline-tools"
@@ -30,28 +37,44 @@ jobs:
           yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
           $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
 
-      - name: Validate package.json presence
+      # Verificar instalación de ADB
+      - name: Verify ADB Installation
         run: |
-          if [ ! -f package.json ]; then
-            echo "package.json not found in $(pwd)"
-            exit 1
-          fi
+          source $GITHUB_ENV
+          adb version
 
-      - name: Install Node.js Dependencies
-        run: npm install
-
+      # Crear y arrancar el emulador
       - name: Create and Start Emulator
         run: |
           source $GITHUB_ENV
           echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-31;default;x86_64" --device "pixel_5"
-          $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu swiftshader_indirect -accel off &
+          $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-audio -no-window -gpu swiftshader_indirect -accel off &
           sleep 180
-          adb wait-for-device
 
+      # Esperar hasta que el emulador complete el arranque
+      - name: Wait for Emulator Boot
+        run: |
+          source $GITHUB_ENV
+          adb wait-for-device
+          for i in {1..60}; do
+            if adb shell getprop sys.boot_completed | grep -m 1 '1'; then
+              echo "Emulator boot completed"
+              exit 0
+            fi
+            echo "Waiting for emulator to complete boot... ($i)"
+            sleep 10
+          done
+          echo "Emulator did not complete boot in time"
+          exit 1
+
+      # Verificar que el emulador está funcionando
       - name: Verify Emulator Running
         run: |
           source $GITHUB_ENV
           adb devices
+
+      - name: Install Node.js Dependencies
+        run: npm install
 
       - name: Install Appium
         run: |
