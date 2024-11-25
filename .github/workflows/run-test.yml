@@ -26,7 +26,7 @@ jobs:
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "system-images;android-31;default;x86_64" "emulator" "platforms;android-31"
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-31" "system-images;android-31;default;x86_64" "emulator"
 
       # Verificar instalación de ADB
       - name: Verify ADB Installation
@@ -34,6 +34,14 @@ jobs:
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           adb version
+
+      # Reiniciar ADB y generar claves si es necesario
+      - name: Restart ADB and Generate Keys
+        run: |
+          adb kill-server
+          rm -f ~/.android/adbkey ~/.android/adbkey.pub
+          adb start-server
+          adb devices
 
       # Crear y arrancar el emulador
       - name: Create and Start Emulator
