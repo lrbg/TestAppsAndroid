@@ -29,8 +29,7 @@ jobs:
         run: |
           mkdir -p ./apps
           wget -O ./apps/gfa22112024.apk https://appsreservamos2024r1.s3.us-east-2.amazonaws.com/gfa22112024.apk
-          
-
+          ls -l ./apps/gfa22112024.apk
 
       # Configurar Android SDK
       - name: Setup Android SDK
@@ -119,10 +118,10 @@ jobs:
         run: sleep 10     
 
       # Instalar appium-doctor
-      - name: Install Appium Doctor
-        run: |
-          npm install -g appium-doctor
-          appium-doctor
+      #- name: Install Appium Doctor
+      #  run: |
+      #    npm install -g appium-doctor
+      #    appium-doctor
 
       # Verificar que Appium está ejecutándose
       - name: Verify Appium is Running
