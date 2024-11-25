@@ -91,11 +91,21 @@ jobs:
           appium --version
           echo "Appium setup validated successfully"
 
+      # Install Appium driver uiautomator2
+      - name: Install Appium Driver
+        run: |
+          appium driver install uiautomator2
+          echo "Install Appium driver uiautomator2"
+
       # Iniciar appium service
       - name: Init appium service
         run: |
           appium --relaxed-security --base-path "/wd/hub"
           echo "Appium service init"
+
+      # Validate Appium Driver Installation
+      - name: Validate Appium Driver Installation
+        run: appium driver list --installed
 
       # Esperar a que Appium esté listo
       - name: Wait for Appium to be Ready
