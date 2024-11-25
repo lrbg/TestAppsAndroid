@@ -58,7 +58,7 @@ exports.config = {
         'appium:deviceName': 'emulator-5554',
         'appium:automationName': 'UiAutomator2',
         'appium:app': 'https://appsreservamos2024r1.s3.us-east-2.amazonaws.com/gfa22112024.apk',
-        //'appium:app': '/Users/luisrogelio/Documents/testAppReservamosJS/apk/gfa22112024.apk' 
+        //'appium:app': '/Users/luisrogelio/Documents/testAppReservamosJS/apk/gfa22112024.apk', 
         'appium:noReset': true, // Mantener la sesión del emulador
         'appium:newCommandTimeout': 300, // Evitar timeouts en comandos
     }],
