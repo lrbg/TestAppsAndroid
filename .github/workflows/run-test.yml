@@ -112,9 +112,9 @@ jobs:
           sleep 30
           cat appium.log
           netstat -tulpn | grep 4723
-
-        sleep 60   
-
+          sleep 60
+    
+          
       # Validate Appium Driver Installation
       - name: Validate Appium Driver Installation
         run: appium driver list --installed
