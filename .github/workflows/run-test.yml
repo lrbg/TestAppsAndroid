@@ -34,13 +34,17 @@ jobs:
        run: |
          mkdir -p "$HOME/android-sdk/cmdline-tools"
          cd "$HOME/android-sdk/cmdline-tools"
+         
          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
          unzip -q commandlinetools-linux-9477386_latest.zip
+         
          mkdir -p latest
          mv cmdline-tools/* latest/
          rmdir cmdline-tools
+         
          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
          echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
+         
          ls -la "$HOME/android-sdk/cmdline-tools/latest/bin"
 
      - name: Install Android Tools
@@ -48,6 +52,7 @@ jobs:
          yes | sdkmanager --licenses > /dev/null
          sdkmanager "platform-tools" "platforms;android-30" "build-tools;30.0.3"
          sdkmanager "system-images;android-30;google_apis;x86_64"
+         
          echo "Verificando instalación:"
          sdkmanager --list_installed
 
@@ -98,18 +103,13 @@ jobs:
      - name: Setup Appium
        run: |
          npm install -g appium@2.4.1
-         npm install -g appium-doctor
          appium driver install uiautomator2@3.9.0
 
          echo "Starting Appium..."
-         mkdir -p videos
-         
          appium \
            --base-path /wd/hub \
            --log-level info \
            --plugin appium-video-recorder \
-           --relaxed-security \
-           --allow-insecure chromedriver_autodownload \
            > appium.log 2>&1 &
         
          sleep 10
@@ -126,9 +126,10 @@ jobs:
          appium driver list --installed
 
      - name: Install Project Dependencies
-       run: npm install
+       run: |
+         npm install
 
-     - name: Run E2E Tests
+     - name: Run E2E Tests 
        env:
          BRAND: gfa
          CI: true
@@ -138,7 +139,6 @@ jobs:
        if: always()
        run: |
          npm install -g allure-commandline
-         cp videos/* allure-results/ || true
          allure generate allure-results --clean
 
      - name: Deploy to GitHub Pages
@@ -148,14 +148,13 @@ jobs:
          github_token: ${{ secrets.GITHUB_TOKEN }}
          publish_dir: ./allure-report
 
-     - name: Upload Artifacts
+     - name: Upload Logs
        if: always()
        uses: actions/upload-artifact@v3
        with:
-         name: test-artifacts
+         name: test-logs
          path: |
            appium.log
            emulator.log
            allure-results/
            videos/
-           allure-report/

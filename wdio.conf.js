@@ -3,45 +3,39 @@ exports.config = {
     hostname: '127.0.0.1',
     port: 4723,
     path: '/wd/hub',
- 
+
     specs: [
         './test/specs/**/*.js'
     ],
- 
+
     maxInstances: 1,
- 
+
     capabilities: [{
         platformName: 'Android',
         'appium:deviceName': 'emulator-5554',
         'appium:automationName': 'UiAutomator2',
         'appium:app': './apps/gfa22112024.apk',
         'appium:noReset': true,
-        'appium:newCommandTimeout': 180000,
-        'appium:adbExecTimeout': 180000,
-        'appium:uiautomator2ServerInstallTimeout': 180000,
-        'appium:androidInstallTimeout': 180000,
+        'appium:newCommandTimeout': 180000,        // 90 segundos
+        'appium:adbExecTimeout': 180000,          // 1 minuto
+        'appium:uiautomator2ServerInstallTimeout': 180000, // 2 minutos
+        'appium:androidInstallTimeout': 180000,   // 2 minutos
         'appium:autoGrantPermissions': true,
         'appium:unlockType': 'pin',
         'appium:unlockKey': '1111',
         'appium:avd': 'test',
-        'appium:platformVersion': '11.0',
-        'appium:appWaitActivity': '*',
-        'appium:appWaitDuration': 180000,
+        'appium:platformVersion': '11.0',  // Android 30 = Android 11                    
+        'appium:appWaitActivity': '*',           
+        'appium:appWaitDuration': 180000,         // 1 minuto
         'appium:printPageSourceOnFindFailure': true,
         'appium:ensureWebviewsHavePages': true,
         'appium:nativeWebScreenshot': true,
-        'appium:enablePerformanceLogging': true,
-        // Configuración para grabación de video
-        'appium:recordVideo': true,
-        'appium:videoType': 'mpeg4',
-        'appium:videoQuality': '1',
-        'appium:videoFps': '10',
-        'appium:videoScale': '1'
+        'appium:enablePerformanceLogging': true
     }],
- 
+
     logLevel: 'debug',
-    waitforTimeout: 180000,
-    connectionRetryTimeout: 180000,
+    waitforTimeout: 180000,          // 45 segundos
+    connectionRetryTimeout: 180000, // 2 minutos
     connectionRetryCount: 3,
     framework: 'mocha',
     
@@ -53,13 +47,13 @@ exports.config = {
             disableWebdriverScreenshotsReporting: false,
         }]
     ],
- 
+
     mochaOpts: {
         ui: 'bdd',
-        timeout: 300000,
-        retries: 1
+        timeout: 300000, // 5 minutos
+        retries: 1      // reintentos
     },
- 
+
     before: function () {
         const brand = process.env.BRAND || 'default';
         console.log(`Iniciando pruebas para marca: ${brand}`);
@@ -69,7 +63,7 @@ exports.config = {
             nodeVersion: process.version,
             appiumVersion: process.env.APPIUM_VERSION
         });
- 
+
         if (!brand) {
             throw new Error('La variable BRAND no está definida.');
         }
@@ -77,30 +71,18 @@ exports.config = {
         global.brand = brand;
         global.platform = process.env.PLATFORM || 'Android';
     },
- 
+
+    // Mejora en el manejo de fallos
     afterTest: async function(test, context, { passed }) {
         if (!passed) {
-            // Screenshot
-            const screenshot = await browser.takeScreenshot();
-            await allure.addAttachment('Screenshot', Buffer.from(screenshot, 'base64'), 'image/png');
+            // Capturar screenshot
+            await browser.takeScreenshot();
             
-            // Video
-            try {
-                const video = await browser.getRecordingPath();
-                await allure.addAttachment('Video', {
-                    content: video,
-                    name: `${test.title}.mp4`,
-                    type: 'video/mp4'
-                });
-            } catch (e) {
-                console.log('Error al adjuntar video:', e);
-            }
-            
-            // Logs
+            // Capturar logs adicionales
             console.log('Estado del dispositivo después del fallo:');
-            const pageSource = await browser.getPageSource();
-            await allure.addAttachment('Page Source', pageSource, 'text/plain');
+            await browser.getPageSource();
             
+            // Información del error
             console.log('Detalles del error:', {
                 testName: test.title,
                 parent: test.parent,
@@ -108,20 +90,21 @@ exports.config = {
             });
         }
     },
- 
+
+    // Añadir hooks adicionales
     onPrepare: function () {
         console.log('Iniciando configuración de pruebas...');
     },
- 
+
     onComplete: function() {
         console.log('Finalizando suite de pruebas...');
     },
- 
+
     beforeSession: function () {
         console.log('Configurando nueva sesión...');
     },
- 
+
     afterSession: function () {
         console.log('Finalizando sesión...');
     }
- }
+}
