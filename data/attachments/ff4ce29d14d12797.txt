@@ -1,4 +1,0 @@
-{
-  "using": "id",
-  "value": "com.bitbar.testdroid:id/radio2"
-}
