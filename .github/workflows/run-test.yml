@@ -93,23 +93,22 @@ jobs:
       # Instalar Appium
       - name: Install Appium
         run: |
-          npm install -g appium
-          appium --version
+          npm install -g appium@next
+          appium driver install uiautomator2
           echo "Appium setup validated successfully"
 
-      # Install Appium driver uiautomator2
-      - name: Install Appium Driver
-        run: |
-          appium driver install uiautomator2
-          echo "Install Appium driver uiautomator2"
 
       # Iniciar appium service
       - name: Init appium service
         run: |
-          nohup appium --relaxed-security --base-path "/wd/hub" \
+          mkdir -p logs
+          nohup appium \
+          --relaxed-security \
+          --base-path "/wd/hub" \
           --log-level debug \
           --log-timestamp \
-          --log-no-colors > appium_detailed.log 2>&1 &
+          --log-no-colors \
+          > ./logs/appium.log 2>&1 &
           echo "Appium service init"
 
       # Validate Appium Driver Installation
@@ -120,39 +119,8 @@ jobs:
       # Verificar el estado del servicio Appium y capturar logs en caso de fallo
       - name: Validate Appium Service Status
         run: |
-          export APPIUM_URL=http://127.0.0.1:4723/wd/hub
-          for i in {1..30}; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" $APPIUM_URL/status)
-            if [ "$STATUS" -eq 200 ]; then
-              echo "Appium service is ready."
-              exit 0
-            fi
-            echo "Waiting for Appium service to be ready... ($i)"
-            sleep 5
-          done
-          echo "Appium service did not become ready in time. Logs:"
-          echo "------------------ appium.log ------------------"
-          cat appium.log || echo "appium.log not found"
-          echo "---------------- appium_detailed.log ----------------"
-          cat appium_detailed.log || echo "appium_detailed.log not found"
-          exit 1
-        shell: bash
-
-
-
-      - name: Archive and Display Full Logs on Failure
-        if: failure()
-        run: |
-          echo "Archiving logs for further analysis."
-          mkdir -p logs
-          mv appium.log logs/ || echo "appium.log not found for archiving."
-          mv appium_detailed.log logs/ || echo "appium_detailed.log not found for archiving."
-          echo "Logs archived. Displaying content:"
-          echo "------------------ appium.log ------------------"
-          cat logs/appium.log || echo "appium.log not available."
-          echo "---------------- appium_detailed.log ----------------"
-          cat logs/appium_detailed.log || echo "appium_detailed.log not available."
-        shell: bash
+            ps aux | grep appium
+            netstat -tulpn | grep 4723
 
 
 
