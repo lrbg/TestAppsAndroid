@@ -1,56 +1,39 @@
 exports.config = {
-    // Configuración básica - OK
     runner: 'local',
     hostname: '127.0.0.1',
     port: 4723,
     path: '/wd/hub',
-
-    // Configuración de specs - OK
+    // Configuración de specs
     specs: [
         './test/specs/**/*.js'
     ],
-
     // Ajuste de instancias máximas
-    maxInstances: 2, // Reducir para mejor estabilidad en CI
-
-    // Mejora en capabilities
+    maxInstances: 1,
     capabilities: [{
         platformName: 'Android',
         'appium:deviceName': 'emulator-5554',
         'appium:automationName': 'UiAutomator2',
         'appium:app': './apps/gfa22112024.apk',
         'appium:noReset': true,
-        
-        // Ajustes de timeouts más conservadores
         'appium:newCommandTimeout': 90000,        // 90 segundos
         'appium:adbExecTimeout': 60000,          // 1 minuto
         'appium:uiautomator2ServerInstallTimeout': 120000, // 2 minutos
         'appium:androidInstallTimeout': 120000,   // 2 minutos
-        
-        // Configuraciones adicionales recomendadas
         'appium:autoGrantPermissions': true,
         'appium:unlockType': 'pin',
         'appium:unlockKey': '1111',
-        'appium:avd': 'test',                    // Nombre de tu emulador
-        'appium:appWaitActivity': '*',           // Esperar cualquier actividad
+        'appium:avd': 'test',                    
+        'appium:appWaitActivity': '*',           
         'appium:appWaitDuration': 60000,         // 1 minuto
-        
-        // Configuraciones de depuración
         'appium:printPageSourceOnFindFailure': true,
         'appium:ensureWebviewsHavePages': true,
         'appium:nativeWebScreenshot': true,
         'appium:enablePerformanceLogging': true
     }],
-
-    // Ajustes de logging
-    logLevel: 'debug', // Cambiar a debug para más información
-    
-    // Timeouts más realistas
+    logLevel: 'debug',
     waitforTimeout: 45000,          // 45 segundos
     connectionRetryTimeout: 120000, // 2 minutos
     connectionRetryCount: 3,
-
-    // Framework y reportes - OK
     framework: 'mocha',
     reporters: [
         'spec',
@@ -61,14 +44,12 @@ exports.config = {
         }]
     ],
 
-    // Configuración de Mocha
     mochaOpts: {
         ui: 'bdd',
         timeout: 300000, // 5 minutos
-        retries: 1      // Añadir reintentos
+        retries: 1      // reintentos
     },
 
-    // Hooks mejorados
     before: function () {
         const brand = process.env.BRAND || 'default';
         console.log(`Iniciando pruebas para marca: ${brand}`);
