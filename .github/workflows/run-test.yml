@@ -57,14 +57,56 @@ jobs:
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           adb version
 
-      # Crear y arrancar el emulador
-      - name: Create and Start Emulator
+
+      - name: Create and Start Android Emulator
         run: |
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
-          echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-30;default;x86_64" --device "pixel_5"
-          $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-audio -no-window -gpu swiftshader_indirect -accel off -verbose &
-          sleep 180
+          echo "no" | avdmanager create avd \
+            -n test \
+            -k "system-images;android-30;google_apis;x86_64" \
+            --force
+            
+          $ANDROID_HOME/emulator/emulator \
+            -avd test \
+            -no-window \
+            -gpu swiftshader_indirect \
+            -no-snapshot \
+            -no-audio \
+            -memory 2048 \
+            -skin 1080x2340 \
+            -writable-system \
+            -no-boot-anim \
+            -cores 2 \
+            > emulator.log 2>&1 &
+          adb wait-for-device
+          adb root
+          adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
+          adb devices
+          adb shell getprop ro.build.version.release
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+
+      - name: Install and Configure Appium
+        run: |
+          npm install -g appium@2.4.1
+          appium driver install uiautomator2@3.9.0
+          
+          echo "Starting Appium server..."
+          appium \
+            --relaxed-security \
+            --allow-insecure chromedriver_autodownload \
+            --base-path /wd/hub \
+            --address 127.0.0.1 \
+            --port 4723 \
+            --log-level debug \
+            --log-timestamp \
+            --command-timeout 60000 \
+            --debug-log-spacing \
+            >> appium.log 2>&1 &
+            
+          sleep 10
+
+
 
       # Esperar hasta que el emulador complete el arranque
       - name: Wait for Emulator Boot
