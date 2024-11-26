@@ -1,7 +1,5 @@
 name: Android Emulator Setup and Validation for Appium
 
-
-
 on:
  push:
    branches:
@@ -114,10 +112,8 @@ jobs:
          echo "Starting Appium..."
          appium --base-path /wd/hub --log-level info > appium.log 2>&1 &
          
-         # Esperar a que Appium inicie
          sleep 10
          
-         # Verificar estado de Appium
          if curl -s http://localhost:4723/wd/hub/status | grep -q "ready"; then
            echo "Appium started successfully"
            curl -s http://localhost:4723/wd/hub/status | jq '.'
@@ -127,17 +123,30 @@ jobs:
            exit 1
          fi
          
-         # Verificar driver instalado
          appium driver list --installed
 
      - name: Install Project Dependencies
-       run: npm install
+       run: |
+         npm install
 
      - name: Run E2E Tests
        env:
          BRAND: gfa
          CI: true
        run: npm run wdio
+
+     - name: Generate Allure Report  
+       if: always()
+       run: |
+         npm install -g allure-commandline
+         allure generate allure-results --clean
+
+     - name: Deploy to GitHub Pages
+       if: always()
+       uses: peaceiris/actions-gh-pages@v3
+       with:
+         github_token: ${{ secrets.GITHUB_TOKEN }}
+         publish_dir: ./allure-report
 
      - name: Upload Logs
        if: always()
