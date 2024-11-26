@@ -93,8 +93,8 @@ jobs:
       # Instalar Appium
       - name: Install Appium
         run: |
-          npm install -g appium@next
-          appium driver install uiautomator2
+          npm install -g appium@2.4.1
+          appium driver install uiautomator2@3.9.0
           echo "Appium setup validated successfully"
 
 
