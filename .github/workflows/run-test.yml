@@ -101,15 +101,17 @@ jobs:
       # Iniciar appium service
       - name: Init appium service
         run: |
-          mkdir -p logs
-          nohup appium \
+          appium \
           --relaxed-security \
           --base-path "/wd/hub" \
           --log-level debug \
-          --log-timestamp \
-          --log-no-colors \
-          > ./logs/appium.log 2>&1 &
-          echo "Appium service init"
+          --allow-insecure chromedriver_autodownload \
+          --address 127.0.0.1 \
+          --port 4723 \
+          > appium.log 2>&1 &
+          sleep 30
+          cat appium.log
+          netstat -tulpn | grep 4723
 
       # Validate Appium Driver Installation
       - name: Validate Appium Driver Installation
