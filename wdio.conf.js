@@ -72,17 +72,11 @@ exports.config = {
         global.platform = process.env.PLATFORM || 'Android';
     },
 
-    // Mejora en el manejo de fallos
     afterTest: async function(test, context, { passed }) {
         if (!passed) {
-            // Capturar screenshot
             await browser.takeScreenshot();
-            
-            // Capturar logs adicionales
             console.log('Estado del dispositivo después del fallo:');
             await browser.getPageSource();
-            
-            // Información del error
             console.log('Detalles del error:', {
                 testName: test.title,
                 parent: test.parent,
@@ -91,7 +85,6 @@ exports.config = {
         }
     },
 
-    // Añadir hooks adicionales
     onPrepare: function () {
         console.log('Iniciando configuración de pruebas...');
     },

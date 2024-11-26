@@ -1,8 +1,5 @@
 name: Android Emulator Setup and Validation for Appium
 
-permissions:
- contents: write
-
 on:
  push:
    branches:
@@ -19,11 +16,10 @@ jobs:
      - name: Install Dependencies
        run: |
          sudo apt-get update
-         sudo apt-get install -y openjdk-11-jdk unzip wget curl qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils ffmpeg
+         sudo apt-get install -y openjdk-11-jdk unzip wget curl qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
          sudo adduser $USER kvm
          sudo chown $USER /dev/kvm
          ls -la /dev/kvm
-         npm install -g appium-video-recorder
 
      - name: Set up Node.js
        uses: actions/setup-node@v3
@@ -35,16 +31,20 @@ jobs:
          mkdir -p "$HOME/android-sdk/cmdline-tools"
          cd "$HOME/android-sdk/cmdline-tools"
          
+         # Descargar y extraer
          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
          unzip -q commandlinetools-linux-9477386_latest.zip
          
+         # Organizar directorios
          mkdir -p latest
          mv cmdline-tools/* latest/
          rmdir cmdline-tools
          
+         # Variables de entorno
          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
          echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
          
+         # Verificar instalación
          ls -la "$HOME/android-sdk/cmdline-tools/latest/bin"
 
      - name: Install Android Tools
@@ -60,16 +60,19 @@ jobs:
        run: |
          export ANDROID_AVD_HOME=$HOME/.android/avd
          
+         # Crear AVD
          echo "no" | avdmanager create avd \
            -n test \
            -k "system-images;android-30;google_apis;x86_64" \
            -d pixel_5 \
            --force
          
+         # Configuración específica del hardware
          echo 'hw.cpu.ncore=2' >> ~/.android/avd/test.avd/config.ini
          echo 'hw.ramSize=2048' >> ~/.android/avd/test.avd/config.ini
          echo 'disk.dataPartition.size=2048M' >> ~/.android/avd/test.avd/config.ini
          
+         # Iniciar emulador con KVM
          nohup $ANDROID_HOME/emulator/emulator \
            -avd test \
            -no-window \
@@ -80,6 +83,7 @@ jobs:
            -qemu -enable-kvm \
            > emulator.log 2>&1 &
          
+         # Esperar booteo con verificación
          echo "Esperando emulador..."
          while true; do
            if adb shell getprop sys.boot_completed 2>/dev/null | grep -q '1'; then
@@ -106,14 +110,10 @@ jobs:
          appium driver install uiautomator2@3.9.0
 
          echo "Starting Appium..."
-         appium \
-           --base-path /wd/hub \
-           --log-level info \
-           --plugin appium-video-recorder \
-           > appium.log 2>&1 &
-        
+         appium --base-path /wd/hub --log-level info > appium.log 2>&1 &
+         
          sleep 10
-        
+         
          if curl -s http://localhost:4723/wd/hub/status | grep -q "ready"; then
            echo "Appium started successfully"
            curl -s http://localhost:4723/wd/hub/status | jq '.'
@@ -122,14 +122,14 @@ jobs:
            cat appium.log
            exit 1
          fi
-        
+         
          appium driver list --installed
 
      - name: Install Project Dependencies
        run: |
          npm install
 
-     - name: Run E2E Tests 
+     - name: Run E2E Tests Android
        env:
          BRAND: gfa
          CI: true
@@ -157,4 +157,3 @@ jobs:
            appium.log
            emulator.log
            allure-results/
-           videos/
