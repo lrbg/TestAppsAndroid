@@ -3,12 +3,13 @@ exports.config = {
     hostname: '127.0.0.1',
     port: 4723,
     path: '/wd/hub',
-    // Configuración de specs
+
     specs: [
         './test/specs/**/*.js'
     ],
-    // Ajuste de instancias máximas
+
     maxInstances: 1,
+
     capabilities: [{
         platformName: 'Android',
         'appium:deviceName': 'emulator-5554',
@@ -31,11 +32,13 @@ exports.config = {
         'appium:nativeWebScreenshot': true,
         'appium:enablePerformanceLogging': true
     }],
+
     logLevel: 'debug',
     waitforTimeout: 180000,          // 45 segundos
     connectionRetryTimeout: 180000, // 2 minutos
     connectionRetryCount: 3,
     framework: 'mocha',
+    
     reporters: [
         'spec',
         ['allure', {
