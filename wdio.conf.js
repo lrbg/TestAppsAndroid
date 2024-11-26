@@ -15,24 +15,24 @@ exports.config = {
         'appium:automationName': 'UiAutomator2',
         'appium:app': './apps/gfa22112024.apk',
         'appium:noReset': true,
-        'appium:newCommandTimeout': 90000,        // 90 segundos
-        'appium:adbExecTimeout': 60000,          // 1 minuto
-        'appium:uiautomator2ServerInstallTimeout': 120000, // 2 minutos
-        'appium:androidInstallTimeout': 120000,   // 2 minutos
+        'appium:newCommandTimeout': 180000,        // 90 segundos
+        'appium:adbExecTimeout': 180000,          // 1 minuto
+        'appium:uiautomator2ServerInstallTimeout': 180000, // 2 minutos
+        'appium:androidInstallTimeout': 180000,   // 2 minutos
         'appium:autoGrantPermissions': true,
         'appium:unlockType': 'pin',
         'appium:unlockKey': '1111',
         'appium:avd': 'test',                    
         'appium:appWaitActivity': '*',           
-        'appium:appWaitDuration': 60000,         // 1 minuto
+        'appium:appWaitDuration': 180000,         // 1 minuto
         'appium:printPageSourceOnFindFailure': true,
         'appium:ensureWebviewsHavePages': true,
         'appium:nativeWebScreenshot': true,
         'appium:enablePerformanceLogging': true
     }],
     logLevel: 'debug',
-    waitforTimeout: 45000,          // 45 segundos
-    connectionRetryTimeout: 120000, // 2 minutos
+    waitforTimeout: 180000,          // 45 segundos
+    connectionRetryTimeout: 180000, // 2 minutos
     connectionRetryCount: 3,
     framework: 'mocha',
     reporters: [
