@@ -1,1 +1,1 @@
-[]
+[{"uid":"22f40d289f623e81","name":"should validate and handle modal and GPS permissions","time":{"start":1732652949574,"stop":1732652955295,"duration":5721},"status":"passed","severity":"normal"},{"uid":"43e3ad4210696b7b","name":"Should validate splash component","time":{"start":1732652955295,"stop":1732652957333,"duration":2038},"status":"passed","severity":"normal"}]
