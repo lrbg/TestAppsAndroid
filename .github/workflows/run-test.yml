@@ -89,6 +89,11 @@ jobs:
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
           adb devices
+          adb shell getprop sys.boot_completed
+          adb shell settings list system
+          adb shell dumpsys window displays
+          echo "Emulator Status:"
+          ps aux | grep emulator
 
       # Instalar Appium
       - name: Install Appium
