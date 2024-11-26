@@ -8,7 +8,6 @@ on:
 jobs:
  android-setup:
    runs-on: ubuntu-latest
-   timeout-minutes: 60
 
    steps:
      - name: Checkout Repository
@@ -17,7 +16,10 @@ jobs:
      - name: Install Dependencies
        run: |
          sudo apt-get update
-         sudo apt-get install -y openjdk-11-jdk unzip wget curl android-tools-adb
+         sudo apt-get install -y openjdk-11-jdk unzip wget curl qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
+         sudo adduser $USER kvm
+         sudo chown $USER /dev/kvm
+         ls -la /dev/kvm
 
      - name: Set up Node.js
        uses: actions/setup-node@v3
@@ -33,7 +35,7 @@ jobs:
          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
          unzip -q commandlinetools-linux-9477386_latest.zip
          
-         # Organizar directorios correctamente
+         # Organizar directorios
          mkdir -p latest
          mv cmdline-tools/* latest/
          rmdir cmdline-tools
@@ -42,7 +44,7 @@ jobs:
          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
          echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
          
-         # Verificar estructura
+         # Verificar instalación
          ls -la "$HOME/android-sdk/cmdline-tools/latest/bin"
 
      - name: Install Android Tools
@@ -54,32 +56,48 @@ jobs:
          echo "Verificando instalación:"
          sdkmanager --list_installed
 
-     - name: Create and Boot Emulator
-       timeout-minutes: 15
+     - name: Create and Start Emulator
        run: |
-         echo "no" | avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --force
-
-         echo "Iniciando emulador..."
+         export ANDROID_AVD_HOME=$HOME/.android/avd
+         
+         # Crear AVD
+         echo "no" | avdmanager create avd \
+           -n test \
+           -k "system-images;android-30;google_apis;x86_64" \
+           -d pixel_5 \
+           --force
+         
+         # Configuración específica del hardware
+         echo 'hw.cpu.ncore=2' >> ~/.android/avd/test.avd/config.ini
+         echo 'hw.ramSize=2048' >> ~/.android/avd/test.avd/config.ini
+         echo 'disk.dataPartition.size=2048M' >> ~/.android/avd/test.avd/config.ini
+         
+         # Iniciar emulador con KVM
          nohup $ANDROID_HOME/emulator/emulator \
            -avd test \
-           -no-audio \
            -no-window \
+           -no-audio \
            -gpu swiftshader_indirect \
            -no-snapshot \
-           -camera-back none \
-           -camera-front none \
-           -memory 2048 \
-           -cores 2 \
-           > /dev/null 2>&1 &
+           -no-boot-anim \
+           -qemu -enable-kvm \
+           > emulator.log 2>&1 &
          
-         echo "Esperando dispositivo..."
-         adb wait-for-device
-         
-         echo "Esperando boot completo..."
-         timeout 300 adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
-         
-         echo "Estado del emulador:"
-         adb devices -l
+         # Esperar booteo con verificación
+         echo "Esperando emulador..."
+         while true; do
+           if adb shell getprop sys.boot_completed 2>/dev/null | grep -q '1'; then
+             echo "Emulador listo"
+             break
+           fi
+           if ! pgrep -f emulator > /dev/null; then
+             echo "Error: Emulador terminó inesperadamente"
+             cat emulator.log
+             exit 1
+           fi
+           echo "Booteo en progreso..."
+           sleep 5
+         done
 
      - name: Download APK
        run: |
@@ -93,20 +111,31 @@ jobs:
 
          echo "Starting Appium..."
          appium --base-path /wd/hub --log-level info > appium.log 2>&1 &
+         
+         # Esperar a que Appium inicie
          sleep 10
-
+         
+         # Verificar estado de Appium
          if curl -s http://localhost:4723/wd/hub/status | grep -q "ready"; then
            echo "Appium started successfully"
+           curl -s http://localhost:4723/wd/hub/status | jq '.'
          else
            echo "Appium failed to start. Logs:"
            cat appium.log
            exit 1
          fi
+         
+         # Verificar driver instalado
+         appium driver list --installed
 
-     - name: Run Tests
-       run: |
-         npm install
-         BRAND=gfa npm run wdio
+     - name: Install Project Dependencies
+       run: npm install
+
+     - name: Run E2E Tests
+       env:
+         BRAND: gfa
+         CI: true
+       run: npm run wdio
 
      - name: Upload Logs
        if: always()
