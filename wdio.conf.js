@@ -86,18 +86,18 @@ exports.config = {
     },
 
     onPrepare: function () {
-        console.log('Iniciando configuración de pruebas...');
+        console.log('Iniciando configuración de pruebas....');
     },
 
     onComplete: function() {
-        console.log('Finalizando suite de pruebas...');
+        console.log('Finalizando suite de pruebas....');
     },
 
     beforeSession: function () {
-        console.log('Configurando nueva sesión...');
+        console.log('Configurando nueva sesión....');
     },
 
     afterSession: function () {
-        console.log('Finalizando sesión...');
+        console.log('Finalizando sesión....');
     }
 }
