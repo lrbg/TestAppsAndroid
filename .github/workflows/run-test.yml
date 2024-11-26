@@ -119,8 +119,13 @@ jobs:
       # Verificar el estado del servicio Appium y capturar logs en caso de fallo
       - name: Validate Appium Service Status
         run: |
-            ps aux | grep appium
-            netstat -tulpn | grep 4723
+            if curl -s http://127.0.0.1:4723/wd/hub/status | grep -q "ready"; then
+              echo "Appium server ready"
+              exit 0
+            else
+              echo "Appium server not ready"
+              exit 1
+            fi
 
 
 
