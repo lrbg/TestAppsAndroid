@@ -8,7 +8,7 @@ on:
 jobs:
  android-setup:
    runs-on: ubuntu-latest
-   timeout-minutes: 60 # Aumentado timeout
+   timeout-minutes: 60
 
    steps:
      - name: Checkout Repository
@@ -26,17 +26,24 @@ jobs:
 
      - name: Setup Android SDK
        run: |
-         mkdir -p "$HOME/android-sdk"
+         mkdir -p "$HOME/android-sdk/cmdline-tools"
+         cd "$HOME/android-sdk/cmdline-tools"
+         
+         # Descargar y extraer
          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-         unzip -q commandlinetools-linux-9477386_latest.zip -d "$HOME/android-sdk/"
-         mkdir -p "$HOME/android-sdk/cmdline-tools/latest"
-         mv "$HOME/android-sdk/cmdline-tools"/* "$HOME/android-sdk/cmdline-tools/latest/"
-         rm -rf "$HOME/android-sdk/cmdline-tools/latest/cmdline-tools"
+         unzip -q commandlinetools-linux-9477386_latest.zip
          
+         # Organizar directorios correctamente
+         mkdir -p latest
+         mv cmdline-tools/* latest/
+         rmdir cmdline-tools
+         
+         # Variables de entorno
          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-         echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$HOME/android-sdk/emulator:$PATH" >> $GITHUB_ENV
+         echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
          
-         source $GITHUB_ENV
+         # Verificar estructura
+         ls -la "$HOME/android-sdk/cmdline-tools/latest/bin"
 
      - name: Install Android Tools
        run: |
@@ -53,7 +60,17 @@ jobs:
          echo "no" | avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --force
 
          echo "Iniciando emulador..."
-         nohup $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -gpu swiftshader_indirect -no-snapshot -camera-back none -camera-front none -no-boot-anim -cores 2 > /dev/null 2>&1 &
+         nohup $ANDROID_HOME/emulator/emulator \
+           -avd test \
+           -no-audio \
+           -no-window \
+           -gpu swiftshader_indirect \
+           -no-snapshot \
+           -camera-back none \
+           -camera-front none \
+           -memory 2048 \
+           -cores 2 \
+           > /dev/null 2>&1 &
          
          echo "Esperando dispositivo..."
          adb wait-for-device
