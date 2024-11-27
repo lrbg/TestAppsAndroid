@@ -14,8 +14,10 @@ exports.config = {
         platformName: 'Android',
         'appium:deviceName': 'emulator-5554',
         'appium:automationName': 'UiAutomator2',
-        'appium:app': './apps/gfa22112024.apk',
-        'appium:noReset': true,
+        //'appium:app': './apps/gfa22112024.apk',  // git remoto
+        'appium:app': '/Users/luisrogelio/Documents/testAppReservamosJS/apk/gfa22112024.apk',  // local
+        //'appium:noReset': true,
+        'appium:noReset': false,
         'appium:newCommandTimeout': 180000,        // 90 segundos
         'appium:adbExecTimeout': 180000,          // 1 minuto
         'appium:uiautomator2ServerInstallTimeout': 180000, // 2 minutos
@@ -23,7 +25,8 @@ exports.config = {
         'appium:autoGrantPermissions': true,
         'appium:unlockType': 'pin',
         'appium:unlockKey': '1111',
-        'appium:avd': 'test',
+        //'appium:avd': 'test',  // git remote
+        'appium:avd': 'nightwatch-android-11',  // local 
         'appium:platformVersion': '11.0',  // Android 30 = Android 11                    
         'appium:appWaitActivity': '*',           
         'appium:appWaitDuration': 180000,         // 1 minuto

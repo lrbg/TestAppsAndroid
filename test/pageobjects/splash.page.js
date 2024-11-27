@@ -48,6 +48,20 @@ class SplashScreen {
         await Helpers.waitObjt(this.btnNextStepThree);
         await this.btnNextStepThree.click();
     }
+
+
+    async isVisible() {
+        try {
+          // Check if the splash screen elements are present
+          const logoElement = await this.getLogoElement();
+          return await logoElement.isDisplayed();
+        } catch (error) {
+          console.error('Error checking splash screen visibility:', error);
+          return false;
+        }
+      }
+
+
 }
 
 module.exports = new SplashScreen();
