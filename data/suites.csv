@@ -1,3 +1,0 @@
-"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
-"","2038","Should validate splash component","","Tue Nov 26 20:29:15 UTC 2024","passed","Tue Nov 26 20:29:17 UTC 2024","","it should complete a simple purchase @e2e_001","",""
-"","5721","should validate and handle modal and GPS permissions","","Tue Nov 26 20:29:09 UTC 2024","passed","Tue Nov 26 20:29:15 UTC 2024","","it should complete a simple purchase @e2e_001","",""
