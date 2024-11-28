@@ -52,7 +52,6 @@ class SplashScreen {
 
     async isVisible() {
         try {
-          // Check if the splash screen elements are present
           const logoElement = await this.getLogoElement();
           return await logoElement.isDisplayed();
         } catch (error) {

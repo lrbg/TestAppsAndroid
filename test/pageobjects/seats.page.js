@@ -1,173 +1,327 @@
-const Helpers = require('./helpers.page.js');
-const isIOS = driver.isIOS;
+const Helpers = require('./helpers.page');
 
-class Seats {
-    /** UI Selectors */
-    get seatContainer() {
-        return isIOS
-            ? $('~seatScrollView')
-            : $('android=new UiSelector().className("android.widget.ScrollView").index(3)');
+class SeatsPage {
+  /**
+   * Detecta la plataforma actual (iOS o Android) y devuelve el localizador correspondiente.
+   * @param {string} iOSLocator - Localizador para iOS.
+   * @param {string} androidLocator - Localizador para Android.
+   * @returns {string} - Localizador para la plataforma actual.
+   */
+  getPlatformLocator(iOSLocator, androidLocator) {
+    return global.platform === 'iOS' ? iOSLocator : androidLocator;
+  }
+
+  /**
+   * Obtiene un elemento basado en un selector.
+   * @param {string} selector - Selector del elemento.
+   * @returns {WebdriverIO.Element} - Elemento encontrado.
+   */
+  getElement(selector) {
+    return $(selector);
+  }
+
+  /** Selectores de UI */
+  get seatContainer() {
+    return this.getElement(
+      this.getPlatformLocator(
+        '-ios class chain:**/XCUIElementTypeScrollView[2]',
+        'android=new UiSelector().className("android.widget.ScrollView").index(3)'
+      )
+    );
+  }
+
+  get womanSeatCheckbox() {
+    return this.getElement(
+      this.getPlatformLocator(
+        '//XCUIElementTypeStaticText[contains(@label,"Confirmo que el asiento seleccionado será utilizado por una mujer")]',
+        '//android.widget.TextView[contains(@text,"Confirmo que el asiento seleccionado será utilizado por una mujer")]'
+      )
+    );
+  }
+
+  get initialButton() {
+    return this.getElement(
+      this.getPlatformLocator(
+        '~Elige al menos 1 asiento',
+        '~Elige al menos 1 asiento'
+      )
+    );
+  }
+
+  get continueButton() {
+    return this.getElement(
+      this.getPlatformLocator(
+        '~Continue',
+        'android=new UiSelector().descriptionContains("Continuar con")'
+      )
+    );
+  }
+
+  /**
+   * Constructor de la clase
+   * @param {number} maxSeats - Número máximo de asientos a analizar
+   * @param {number} scrollDelay - Delay entre acciones de scroll
+   */
+  constructor(maxSeats = 50, scrollDelay = 100) {
+    this.maxSeats = maxSeats;
+    this.scrollDelay = scrollDelay;
+    this.resetSeatsState();
+  }
+
+  /**
+   * Reinicia el estado de los asientos
+   */
+  resetSeatsState() {
+    this.availableSeats = [];
+    this.occupiedSeats = [];
+    this.pinkSeats = [];
+    this.selectedSeats = [];
+    this.maxSeatFound = 0;
+  }
+
+  /**
+   * Obtiene un asiento específico por número
+   * @param {string} seatNumber - Número del asiento
+   * @returns {WebdriverIO.Element} - Elemento del asiento
+   */
+  getSeat(seatNumber) {
+    return this.getElement(`~${seatNumber}`);
+  }
+
+  /**
+   * Verifica si un asiento es interactuable
+   * @param {WebdriverIO.Element} seat - Elemento del asiento
+   * @returns {Promise<boolean>} - true si el asiento es interactuable
+   */
+  async isSeatInteractable(seat) {
+    try {
+      await Helpers.waitObjt(seat);
+      return await seat.isDisplayed();
+    } catch {
+      return false;
     }
+  }
 
-    get continueButton() {
-        return isIOS
-            ? $('~Continue')
-            : $('android=new UiSelector().descriptionContains("Continuar con")');
-    }
+  /**
+   * Analiza todos los asientos disponibles
+   * @returns {Promise<Object>} - Resultados del análisis
+   */
+  async analyzeAllSeats() {
+    try {
+      await Helpers.waitObjt(this.seatContainer);
+      console.log('Iniciando análisis de asientos...');
 
-    get seatElements() {
-        return isIOS
-            ? $$('~seatViewGroup')
-            : $$('android=new UiSelector().className("android.view.ViewGroup").clickable(true).enabled(true).focusable(true)');
-    }
+      let consecutiveNotFound = 0;
+      const MAX_CONSECUTIVE_NOT_FOUND = 3;
 
-    get objPink() {
-        return isIOS
-            ? $('~pinkSeatConfirmation')
-            : $('android=new UiSelector().className("android.widget.TextView").textContains("Confirmo que el asiento seleccionado será utilizado por una mujer")');
-    }
-
-    get chkPink() {
-        return isIOS
-            ? $('~checkboxPink')
-            : $('android=new UiSelector().className("android.widget.ImageView").bounds("[79,1627][142,1690]")');
-    }
-
-    get btnNoSetSeats() {
-        return isIOS
-            ? $('~selectAtLeastOneSeat')
-            : $('android=new UiSelector().className("android.view.ViewGroup").description("Elige al menos 1 asiento")');
-    }
-
-    /**
-     * Wait for the seat container to be displayed and select the required seats.
-     * @param {number} numberOfSeatsToSelect - Number of seats to select.
-     */
-    async processSeats(numberOfSeatsToSelect) {
-        await Helpers.waitObjt(this.seatContainer);
-
-        let seats = await this.getAllSeats();
-        let attempts = 0;
-
-        while (numberOfSeatsToSelect > 0 && seats.length > 0 && attempts < 3) {
-            const availableSeats = seats.filter(seat => seat.status === 'disponible');
-            if (availableSeats.length === 0) {
-                await this.scrollDown();
-                seats = await this.getAllSeats();
-                attempts++;
-                continue;
-            }
-
-            const randomIndex = Math.floor(Math.random() * availableSeats.length);
-            const selectedSeat = availableSeats.splice(randomIndex, 1)[0];
-            const isSeatStillAvailable = await this.verifySeatAvailability(selectedSeat);
-
-            if (isSeatStillAvailable) {
-                await this.clickSeat(selectedSeat);
-                numberOfSeatsToSelect--;
-            } else {
-                seats = await this.getAllSeats();
-            }
-        }
-
-        if (await this.objPink.isDisplayed()) {
-            await Helpers.waitObjt(this.objPink);
-            await this.seatContainer.click();
-            await this.objPink.click();
-        }
-        if (await this.btnNoSetSeats.isDisplayed()) {
-            await Helpers.waitObjt(this.btnNoSetSeats, 10000);
-            while (numberOfSeatsToSelect > 0 && seats.length > 0 && attempts < 3) {
-                const availableSeats = seats.filter(seat => seat.status === 'disponible');
-                if (availableSeats.length === 0) {
-                    await this.scrollDown();
-                    seats = await this.getAllSeats();
-                    attempts++;
-                    continue;
-                }
-                const randomIndex = Math.floor(Math.random() * availableSeats.length);
-                const selectedSeat = availableSeats.splice(randomIndex, 1)[0];
-                const isSeatStillAvailable = await this.verifySeatAvailability(selectedSeat);
-                if (isSeatStillAvailable) {
-                    await this.clickSeat(selectedSeat);
-                    numberOfSeatsToSelect--;
-                } else {
-                    seats = await this.getAllSeats();
-                }
-            }
+      for (let seatNumber = 1; seatNumber <= this.maxSeats; seatNumber++) {
+        const seatType = await this.analyzeSeat(seatNumber.toString());
+        
+        if (seatType === 'NOT_FOUND') {
+          consecutiveNotFound++;
+          if (consecutiveNotFound >= MAX_CONSECUTIVE_NOT_FOUND) {
+            this.maxSeatFound = seatNumber - MAX_CONSECUTIVE_NOT_FOUND;
+            break;
+          }
         } else {
-            await Helpers.waitObjt(this.continueButton);
-            await this.seatContainer.click();
-            await this.continueButton.click();
+          consecutiveNotFound = 0;
+          this.maxSeatFound = seatNumber;
+          this.categorizeAndStoreSeat(seatNumber.toString(), seatType);
         }
-    
+      }
+
+      return this.getAnalysisResults();
+    } catch (error) {
+      console.error('Error durante el análisis de asientos:', error);
+      throw error;
     }
+  }
 
-    /**
-     * Verifies if the seat is still available.
-     * @param {Object} seat - Seat object to verify.
-     * @returns {Promise<boolean>} - True if seat is available, otherwise false.
-     */
-    async verifySeatAvailability(seat) {
-        const seatElement = await $(`android=new UiSelector().description("${seat.seatNumber}")`);
-        const contentDesc = await seatElement.getAttribute('content-desc');
-        return contentDesc && parseInt(contentDesc) % 2 === 1; // Available if odd-numbered
+  /**
+   * Analiza un asiento individual
+   * @param {string} seatNumber - Número del asiento
+   * @returns {Promise<string>} - Tipo de asiento encontrado
+   */
+  async analyzeSeat(seatNumber) {
+    try {
+      await driver.pause(1000);
+      const seat = this.getSeat(seatNumber);
+      
+      if (!(await seat.isExisting())) {
+        return 'NOT_FOUND';
+      }
+
+      if (!(await this.isSeatInteractable(seat))) {
+        return 'NOT_INTERACTIVE';
+      }
+
+      await this.performSeatCheck(seat);
+      const seatType = await this.determineSeatType();
+      await this.resetSeatCheck(seat);
+
+      return seatType;
+    } catch (error) {
+      console.error(`Error analizando asiento ${seatNumber}:`, error);
+      return 'ERROR';
     }
+  }
 
-    /**
-     * Obtains all seats with their properties.
-     * @returns {Promise<Array>} - List of seat objects.
-     */
-    async getAllSeats() {
-        const seats = [];
-        const seenSeats = new Set();
-        let lastCount = 0;
+  /**
+   * Realiza la verificación de un asiento
+   * @param {WebdriverIO.Element} seat - Elemento del asiento
+   */
+  async performSeatCheck(seat) {
+    await seat.click();
+    await driver.pause(this.scrollDelay);
+    await this.scrollDown();
+    await driver.pause(this.scrollDelay);
+  }
 
-        while (true) {
-            for (let seat of await this.seatElements) {
-                const contentDesc = await seat.getAttribute('content-desc');
-                const bounds = await seat.getAttribute('bounds');
-                const isDisplayed = await seat.isDisplayed();
+  /**
+   * Resetea el estado después de verificar un asiento
+   * @param {WebdriverIO.Element} seat - Elemento del asiento
+   */
+  async resetSeatCheck(seat) {
+    await this.scrollUp();
+    await driver.pause(this.scrollDelay);
+    await seat.click();
+    await driver.pause(this.scrollDelay);
+  }
 
-                if (contentDesc && isDisplayed && !seenSeats.has(contentDesc)) {
-                    seenSeats.add(contentDesc);
-                    const seatNumber = parseInt(contentDesc);
-                    const status = seatNumber % 2 === 1 ? 'disponible' : 'ocupado';
-                    seats.push({ seatNumber, bounds, status });
-                }
-            }
+  /**
+   * Determina el tipo de asiento basado en los elementos visibles
+   * @returns {Promise<string>} - Tipo de asiento
+   */
+  async determineSeatType() {
+    const isPinkSeat = await this.womanSeatCheckbox.isDisplayed().catch(() => false);
+    if (isPinkSeat) return 'PINK';
 
-            if (seats.length === lastCount) break;
-            lastCount = seats.length;
-            await this.scrollDown();
-        }
+    const isOccupied = await this.initialButton.isDisplayed().catch(() => false);
+    if (isOccupied) return 'OCCUPIED';
 
-        return seats;
+    const continueEnabled = await this.continueButton.getAttribute('enabled') === 'true';
+    return continueEnabled ? 'AVAILABLE' : 'OCCUPIED';
+  }
+
+  /**
+   * Categoriza y almacena un asiento según su tipo
+   * @param {string} seatNumber - Número del asiento
+   * @param {string} seatType - Tipo de asiento
+   */
+  categorizeAndStoreSeat(seatNumber, seatType) {
+    switch (seatType) {
+      case 'AVAILABLE':
+        this.availableSeats.push(seatNumber);
+        break;
+      case 'OCCUPIED':
+        this.occupiedSeats.push(seatNumber);
+        break;
+      case 'PINK':
+        this.pinkSeats.push(seatNumber);
+        break;
     }
+  }
 
-    /**
-     * Scrolls down once to load more seats.
-     */
-    async scrollDown() {
-        await driver.execute('mobile: scrollGesture', {
-            left: 500,
-            top: 1500,
-            width: 500,
-            height: 500,
-            direction: 'down',
-            percent: 3.0
-        });
-    }
+  /**
+   * Obtiene los resultados del análisis
+   * @returns {Object} - Resultados del análisis
+   */
+  getAnalysisResults() {
+    return {
+      maxSeatFound: this.maxSeatFound,
+      availableSeats: this.availableSeats,
+      occupiedSeats: this.occupiedSeats,
+      pinkSeats: this.pinkSeats,
+      selectedSeats: this.selectedSeats,
+      summary: {
+        totalSeats: this.maxSeatFound,
+        available: this.availableSeats.length,
+        occupied: this.occupiedSeats.length,
+        pink: this.pinkSeats.length,
+        selected: this.selectedSeats.length
+      }
+    };
+  }
 
-    /**
-     * Clicks on a specific seat.
-     * @param {Object} seat - Seat object to be clicked.
-     */
-    async clickSeat(seat) {
-        const element = await $(`android=new UiSelector().description("${seat.seatNumber}")`);
-        await element.waitForDisplayed({ timeout: 5000 });
-        await element.click();
+  /**
+   * Selecciona asientos aleatorios disponibles
+   * @param {number} numberOfSeats - Número de asientos a seleccionar
+   * @returns {Promise<string[]>} - Array con los asientos seleccionados
+   */
+  async selectRandomSeats(numberOfSeats) {
+    try {
+      if (numberOfSeats > this.availableSeats.length) {
+        throw new Error(`No hay suficientes asientos disponibles. Solicitados: ${numberOfSeats}, Disponibles: ${this.availableSeats.length}`);
+      }
+
+      const availableSeatsShuffled = [...this.availableSeats].sort(() => Math.random() - 0.5);
+      const seatsToSelect = availableSeatsShuffled.slice(0, numberOfSeats);
+
+      for (const seatNumber of seatsToSelect) {
+        await this.selectSeat(seatNumber);
+        this.selectedSeats.push(seatNumber);
+      }
+
+      return this.selectedSeats;
+    } catch (error) {
+      console.error('Error al seleccionar asientos aleatorios:', error);
+      throw error;
     }
+  }
+
+  /**
+   * Selecciona un asiento específico
+   * @param {string} seatNumber - Número de asiento a seleccionar
+   */
+  async selectSeat(seatNumber) {
+    try {
+      await Helpers.waitObjt(this.seatContainer);
+      const seat = this.getSeat(seatNumber);
+      
+      if (!(await seat.isExisting())) {
+        throw new Error(`El asiento ${seatNumber} no existe`);
+      }
+
+      if (!(await this.isSeatInteractable(seat))) {
+        throw new Error(`El asiento ${seatNumber} no es interactuable`);
+      }
+
+      await seat.click();
+      await Helpers.waitObjt(this.continueButton);
+      await this.continueButton.click();
+    } catch (error) {
+      console.error(`Error al seleccionar el asiento ${seatNumber}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Realiza scroll hacia abajo
+   */
+  async scrollDown() {
+    await driver.execute('mobile: scrollGesture', {
+      left: 0,
+      top: 0,
+      width: 1080,
+      height: 1920,
+      percent: 1.8,
+      direction: 'down'
+    });
+  }
+
+  /**
+   * Realiza scroll hacia arriba
+   */
+  async scrollUp() {
+    await driver.execute('mobile: scrollGesture', {
+      left: 500,
+      top: 1500,
+      width: 500,
+      height: 500,
+      percent: 1,
+      direction: 'up'
+    });
+  }
 }
 
-module.exports = new Seats();
+module.exports = new SeatsPage();

@@ -136,12 +136,29 @@ class Purchase {
      * Completes the purchase by clicking the "Pay" button.
      */
     async completePurchase() {
-        await Helpers.waitObjt(this.endPurchaseButton);
         const maxAttempts = 5;
         for (let i = 0; i < maxAttempts; i++) {
+            const isButtonPresent = await this.endPurchaseButton.isExisting();
+            if (!isButtonPresent) {
+                console.warn(`Intento ${i + 1}: El botón "Pagar" no está disponible.`);
+                await driver.pause(1000); // Espera un segundo antes de reintentar.
+                continue;
+            }
+    
+            console.log(`Intento ${i + 1}: Haciendo clic en el botón "Pagar".`);
             await this.endPurchaseButton.click();
+    
+            // Verifica si el mensaje de éxito aparece.
+            const isSuccessVisible = await this.successMessage.isDisplayed();
+            if (isSuccessVisible) {
+                console.log("Compra completada exitosamente.");
+                return;
+            }
         }
+    
+        throw new Error("No se pudo completar la compra después de varios intentos.");
     }
+    
 
     /**
      * Validates that the success message for purchase completion is displayed.
@@ -157,12 +174,12 @@ class Purchase {
      */
     async scrollDown(percent = 1.0) {
         await driver.execute('mobile: scrollGesture', {
-            left: 500,
-            top: 1500,
-            width: 500,
-            height: 500,
-            direction: 'down',
-            percent: percent
+          left: 0,
+          top: 0,
+          width: 1080,
+          height: 1920,
+          percent,
+          direction: 'down',
         });
     }
 }

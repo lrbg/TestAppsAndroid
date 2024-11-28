@@ -33,7 +33,12 @@ exports.config = {
         'appium:printPageSourceOnFindFailure': true,
         'appium:ensureWebviewsHavePages': true,
         'appium:nativeWebScreenshot': true,
-        'appium:enablePerformanceLogging': true
+        'appium:enablePerformanceLogging': true,
+        'appium:disableWindowAnimation': true, // Deshabilita animaciones
+        'appium:settings[systemBars]': false, // Oculta barra del sistema
+        'appium:unicodeKeyboard': true, // Usa teclado unicode
+        'appium:resetKeyboard': true // Resetea al teclado predeterminado
+
     }],
 
     logLevel: 'debug',
