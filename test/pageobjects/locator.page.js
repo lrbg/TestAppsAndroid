@@ -71,6 +71,7 @@ class Locator {
               await btnAlwaysGps.click();
           }
       }
+      
     } catch (error) {
       console.error('Error al manejar el modal y continuar con el permiso de GPS:', error);
       throw error;

@@ -111,6 +111,8 @@ class SeatsPage {
       await Helpers.waitObjt(this.seatContainer);
       console.log('Iniciando análisis de asientos...');
 
+      //await driver.saveScreenshot('../../screenshots/listSeat.png');
+
       let consecutiveNotFound = 0;
       const MAX_CONSECUTIVE_NOT_FOUND = 3;
 
@@ -158,6 +160,7 @@ class SeatsPage {
       await this.performSeatCheck(seat);
       const seatType = await this.determineSeatType();
       await this.resetSeatCheck(seat);
+      //await driver.saveScreenshot('./screenshots/seatsclick.png');
 
       return seatType;
     } catch (error) {

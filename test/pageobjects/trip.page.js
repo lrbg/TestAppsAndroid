@@ -1,4 +1,5 @@
 const Helpers = require('./helpers.page');
+const fs = require('fs');
 
 class SelectTrip {
     /**
@@ -98,7 +99,10 @@ class SelectTrip {
     async selectRandomChooseButton() {
         try {
             const trips = await this.gatherAllTrips();
-            
+
+            const screenshotBase64 = await driver.takeScreenshot();
+            fs.writeFileSync('./screenshots/listTrip.png', screenshotBase64, 'base64');
+
             if (!trips.length) {
                 throw new Error('No se encontraron viajes disponibles');
             }

@@ -54,6 +54,7 @@ class Purchase {
      * Waits for the "Purchaser's Data" title to be visible and enabled with an extended timeout.
      */
     async waitForPurchaseDataTitle() {
+        await driver.pause(1000);
         await Helpers.waitObjt(this.purchaseDataTitle);
     }
 

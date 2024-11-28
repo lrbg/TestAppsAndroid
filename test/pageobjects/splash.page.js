@@ -1,4 +1,6 @@
 const Helpers = require('./helpers.page.js');
+const fs = require('fs');
+
 
 class SplashScreen {
     get iconStepOne() {
@@ -41,12 +43,18 @@ class SplashScreen {
         if (!(await this.iconStepOne.isDisplayed())) {
             return;
         }
+        
         await Helpers.waitObjt(this.btnNextStepOne);
         await this.btnNextStepOne.click();
         await Helpers.waitObjt(this.btnNextStepTwo);
         await this.btnNextStepTwo.click();
         await Helpers.waitObjt(this.btnNextStepThree);
         await this.btnNextStepThree.click();
+
+
+        const screenshotBase64 = await driver.takeScreenshot();
+        fs.writeFileSync('./screenshots/splash.png', screenshotBase64, 'base64');
+
     }
 
 
