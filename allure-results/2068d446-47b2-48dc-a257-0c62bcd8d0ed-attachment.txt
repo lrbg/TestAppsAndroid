@@ -1,3 +1,0 @@
-{
-  "text": "Ciudad de México, Norte"
-}

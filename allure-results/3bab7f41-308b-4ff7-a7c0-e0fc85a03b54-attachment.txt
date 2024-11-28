@@ -1,4 +1,0 @@
-{
-  "using": "-ios class chain",
-  "value": "**/XCUIElementTypeOther[`label CONTAINS \"Trip card\"`]"
-}

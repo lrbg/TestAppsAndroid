@@ -1,4 +1,0 @@
-{
-  "using": "accessibility id",
-  "value": "Continuar con 1 asiento"
-}
