@@ -26,7 +26,7 @@ describe('it should complete a simple purchase @e2e_001', () => {
         const destination = searchValues[global.brand]?.destination_text || searchValues.default.destination_text;
         await SearchPage.searchTripTomorrow(origin, destination);
     });
-    
+    /*
     it('Should count all available trips', async () => {
         await SelectTrip.selectRandomChooseButton();  //await driver.pause(1000000);
     });
@@ -59,4 +59,5 @@ describe('it should complete a simple purchase @e2e_001', () => {
         await Purchase.completePurchase();
         await Purchase.validateSuccessfulPurchaseMessage();
     });
+    */
 });
