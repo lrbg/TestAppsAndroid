@@ -1,0 +1,4 @@
+{
+  "using": "accessibility id",
+  "value": "1:00 AM, - Directo ->, 7:30 AM, 6 hrs 30 mins0Local, 12 Menores 8 Estudiantes\n8 Profesores 8 INSEN\n, $1,089MXN, 0041,885, ¡Ahora puedes pagar tu viaje con tus Puntos Doters!"
+}

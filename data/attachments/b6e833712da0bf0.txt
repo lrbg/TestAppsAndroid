@@ -1,0 +1,4 @@
+{
+  "using": "xpath",
+  "value": "//android.widget.TextView[@text=\"Elegir\"]/ancestor::android.view.ViewGroup[1]"
+}

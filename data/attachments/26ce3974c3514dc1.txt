@@ -1,0 +1,11 @@
+{
+  "script": "<script> [14 bytes]",
+  "args": [
+    {
+      "strategy": "android uiautomator",
+      "selector": "new UiSelector().className(\"android.widget.ScrollView\").index(3)",
+      "direction": "down",
+      "percent": 0.5
+    }
+  ]
+}
