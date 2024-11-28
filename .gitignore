@@ -3,3 +3,9 @@ apk/*.apk
 
 # Ignorar aplicaciones compiladas
 app/**/*.app
+
+# Ignorar carpeta de reporte
+allure-results/
+
+# Ignorar carpeta de imagenes
+screenshots
