@@ -240,8 +240,8 @@ class SearchPage {
    */
   async searchTripTomorrow(origin, destination) {
     try {
-      const screenshotBase64 = await driver.takeScreenshot();
-      fs.writeFileSync('./screenshots/beginSearch.png', screenshotBase64, 'base64');
+      //const screenshotBase64 = await driver.takeScreenshot();
+      //fs.writeFileSync('./screenshots/beginSearch.png', screenshotBase64, 'base64');
       await Helpers.waitObjt(this.originInput);
       await this.originInput.click();
       await Helpers.waitObjt(this.originSearchInput);
@@ -257,8 +257,8 @@ class SearchPage {
       await Helpers.waitObjt(this.tomorrowButton);
       await this.tomorrowButton.click();
       await Helpers.waitObjt(this.searchButton);
-      const screenshotBase642 = await driver.takeScreenshot();
-      fs.writeFileSync('./screenshots/endSearch.png', screenshotBase642, 'base64');
+      //const screenshotBase642 = await driver.takeScreenshot();
+      //fs.writeFileSync('./screenshots/endSearch.png', screenshotBase642, 'base64');
       await this.searchButton.click();
     } catch (error) {
       console.error('Error al buscar el viaje de mañana:', error);

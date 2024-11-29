@@ -52,8 +52,8 @@ class SplashScreen {
         await this.btnNextStepThree.click();
 
 
-        const screenshotBase64 = await driver.takeScreenshot();
-        fs.writeFileSync('./screenshots/splash.png', screenshotBase64, 'base64');
+        //const screenshotBase64 = await driver.takeScreenshot();
+        //fs.writeFileSync('./screenshots/splash.png', screenshotBase64, 'base64');
 
     }
 
