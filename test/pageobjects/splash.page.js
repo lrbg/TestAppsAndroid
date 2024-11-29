@@ -1,5 +1,4 @@
 const Helpers = require('./helpers.page.js');
-const fs = require('fs');
 const allure = require('@wdio/allure-reporter').default;
 
 
