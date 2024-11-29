@@ -1,4 +1,0 @@
-{
-  "using": "xpath",
-  "value": "//*[@resource-id=\"00000000-0000-0739-ffff-ffff000001c1\"]"
-}
