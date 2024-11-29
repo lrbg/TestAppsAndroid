@@ -65,7 +65,6 @@ class Purchase {
      */
     async fillPurchaseData({ name, lastName, email, phone }) {
 
-        await this.driver.pause(1000);
 
         await this.waitForPurchaseDataTitle();
         await this.nameField.setValue(name);
