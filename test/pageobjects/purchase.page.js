@@ -1,4 +1,5 @@
 const Helpers = require('./helpers.page.js');
+const allure = require('@wdio/allure-reporter').default;
 
 class Purchase {
     /** UI Selectors */
@@ -68,6 +69,10 @@ class Purchase {
         await this.surnameField.setValue(lastName);
         await this.emailField.setValue(email);
         await this.phoneField.setValue(phone);
+
+        const scrFillDataPurchase = await browser.takeScreenshot();
+        allure.addAttachment('formPurchase', Buffer.from(scrFillDataPurchase, 'base64'), './screenshots/formPurchase.png');
+
         await this.scrollDown(0);
     }
 
@@ -98,6 +103,8 @@ class Purchase {
         }
         await Helpers.waitObjt(paymentButton);
         await paymentButton.click();
+        const scrTypePyment = await browser.takeScreenshot();
+        allure.addAttachment('typePayment', Buffer.from(scrTypePyment, 'base64'), './screenshots/typePayment.png');
         await this.scrollDown(1);
     }
 

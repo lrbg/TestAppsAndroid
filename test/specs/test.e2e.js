@@ -56,7 +56,7 @@ describe('it should complete a simple purchase @e2e_001', () => {
         await Insurance.selectInsuranceOption(addInsurance);
     });
 
-    /*
+    
     it('You should complete the purchase process', async () => {
         const purchaserData = purchaserValues;
         const paymentType = 'creditDebit';
@@ -68,5 +68,5 @@ describe('it should complete a simple purchase @e2e_001', () => {
         await Purchase.completePurchase();
         await Purchase.validateSuccessfulPurchaseMessage();
     });
-    */
+    
 });
