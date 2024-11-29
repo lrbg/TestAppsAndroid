@@ -51,12 +51,12 @@ describe('it should complete a simple purchase @e2e_001', () => {
         await Pax.loadPassengerData(passengersData);
     });
 
-    /*
-    
     it('You should select medical insurance', async () => {
         const addInsurance = true;
         await Insurance.selectInsuranceOption(addInsurance);
     });
+
+    /*
     it('You should complete the purchase process', async () => {
         const purchaserData = purchaserValues;
         const paymentType = 'creditDebit';

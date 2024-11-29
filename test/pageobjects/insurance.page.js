@@ -1,5 +1,6 @@
 const Helpers = require('./helpers.page.js');
 const isIOS = driver.isIOS;
+const allure = require('@wdio/allure-reporter').default;
 
 class Insurance {
     /** UI Selectors */
@@ -33,11 +34,15 @@ class Insurance {
                 const btnAddVisible = await Helpers.waitObjt(this.btnTrueInsurance);
                 if (btnAddVisible) {
                     await this.btnTrueInsurance.click();
+                    const scrInsurance = await browser.takeScreenshot();
+                    allure.addAttachment('TrueInsurance', Buffer.from(scrInsurance, 'base64'), './screenshots/TrueInsurance.png');
                 }
             } else {
                 const btnDeclineVisible = await Helpers.waitObjt(this.btnFalseInsurance);
                 if (btnDeclineVisible) {
                     await this.btnFalseInsurance.click();
+                    const scrFalseInsurance = await browser.takeScreenshot();
+                    allure.addAttachment('FalseInsurance', Buffer.from(scrFalseInsurance, 'base64'), './screenshots/FalseInsurance.png');
                 }
             }
         }
