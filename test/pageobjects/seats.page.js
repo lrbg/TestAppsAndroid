@@ -1,4 +1,6 @@
 const Helpers = require('./helpers.page');
+const allure = require('@wdio/allure-reporter').default;
+
 
 class SeatsPage {
   /**
@@ -111,7 +113,8 @@ class SeatsPage {
       await Helpers.waitObjt(this.seatContainer);
       console.log('Iniciando análisis de asientos...');
 
-      //await driver.saveScreenshot('../../screenshots/listSeat.png');
+      const srcTemplateSeats = await browser.takeScreenshot();
+      allure.addAttachment('img_Seats', Buffer.from(srcTemplateSeats, 'base64'), './screenshots/img_Seats.png');
 
       let consecutiveNotFound = 0;
       const MAX_CONSECUTIVE_NOT_FOUND = 3;
@@ -160,7 +163,7 @@ class SeatsPage {
       await this.performSeatCheck(seat);
       const seatType = await this.determineSeatType();
       await this.resetSeatCheck(seat);
-      //await driver.saveScreenshot('./screenshots/seatsclick.png');
+      
 
       return seatType;
     } catch (error) {
@@ -290,6 +293,12 @@ class SeatsPage {
       }
 
       await seat.click();
+
+      await this.driver.pause(1000);
+      const srcSeatSelected = await browser.takeScreenshot();
+      allure.addAttachment('img_SeatSelected', Buffer.from(srcSeatSelected, 'base64'), './screenshots/img_SeatSelected.png');
+
+
       await Helpers.waitObjt(this.continueButton);
       await this.continueButton.click();
     } catch (error) {

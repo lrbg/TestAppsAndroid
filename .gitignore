@@ -7,5 +7,9 @@ app/**/*.app
 # Ignorar carpeta de reporte
 allure-results/
 
+
+# Ignorar carpeta de reporte
+allure-report/
+
 # Ignorar carpeta de imagenes
-# screenshots
+screenshots

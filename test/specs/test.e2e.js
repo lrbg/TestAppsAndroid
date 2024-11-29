@@ -30,11 +30,12 @@ describe('it should complete a simple purchase @e2e_001', () => {
     it('Should count all available trips', async () => {
         await SelectTrip.selectRandomChooseButton();  
     });
-/*    
+
     it('Should check and capture available and occupied seats', async () => {
          await SeatsPage.analyzeAllSeats();
          await SeatsPage.selectRandomSeats(1);
     });
+    /*    
     it('Should load passenger information', async () => {
         const numberOfPassengers = 1;
         const passengersData = passengers.slice(0, numberOfPassengers).map(pax => ({
