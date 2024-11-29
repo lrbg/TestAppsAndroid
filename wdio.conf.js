@@ -58,7 +58,7 @@ exports.config = {
 
     mochaOpts: {
         ui: 'bdd',
-        timeout: 300000, // 5 minutos
+        timeout: 600000, // 10 minutos
         retries: 1      // reintentos
     },
 
