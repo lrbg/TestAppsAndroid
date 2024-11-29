@@ -9,6 +9,7 @@ const Pax = require('../pageobjects/pax.page');
 const Insurance = require('../pageobjects/insurance.page');
 const Purchase = require('../pageobjects/purchase.page');
 
+
 const { searchValues, passengers, creditCardValues, purchaserValues } = require('./input.value');
 
 describe('it should complete a simple purchase @e2e_001', () => {

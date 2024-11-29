@@ -62,7 +62,12 @@ class SelectTrip {
      */
     async gatherAllTrips(maxScrolls = 3) {
         try {
+
             await Helpers.waitObjt(this.tripListContainer);
+
+            const scrListTrip = await browser.takeScreenshot();
+            allure.addAttachment('img_ListTrip', Buffer.from(scrListTrip, 'base64'), './screenshots/img_ListTrip.png');
+
             const uniqueTrips = new Set();
             let consecutiveSameCount = 0;
             const MAX_RETRIES = 2;
@@ -99,10 +104,7 @@ class SelectTrip {
     async selectRandomChooseButton() {
         try {
             const trips = await this.gatherAllTrips();
-
-            const scrListTrips = await browser.takeScreenshot();
-            allure.addAttachment('img_ListTrip', Buffer.from(scrListTrips, 'base64'), './screenshots/ListTrip.png');
-
+            
             if (!trips.length) {
                 throw new Error('No se encontraron viajes disponibles');
             }
@@ -113,7 +115,6 @@ class SelectTrip {
 
             await Helpers.waitObjt(selectedButton);
             await selectedButton.click();
-
             return { success: true, tripsFound: trips.length };
         } catch (error) {
             console.error('Error al seleccionar viaje:', error);

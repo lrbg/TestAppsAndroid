@@ -55,8 +55,6 @@ class SplashScreen {
         const screenshot = await browser.takeScreenshot();
         allure.addAttachment('page splash', Buffer.from(screenshot, 'base64'), './screenshots/splash.png');
 
-        //const screenshotBase64 = await driver.takeScreenshot();
-        //fs.writeFileSync('./screenshots/splash.png', screenshotBase64, 'base64');
 
     }
 
