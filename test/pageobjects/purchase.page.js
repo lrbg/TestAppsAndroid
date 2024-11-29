@@ -64,6 +64,9 @@ class Purchase {
      * @param {Object} purchaseData - Data for the purchaser.
      */
     async fillPurchaseData({ name, lastName, email, phone }) {
+
+        await this.driver.pause(1000);
+
         await this.waitForPurchaseDataTitle();
         await this.nameField.setValue(name);
         await this.surnameField.setValue(lastName);
@@ -137,6 +140,8 @@ class Purchase {
         await cardExpiryField.setValue(expiration);
         await Helpers.waitObjt(cardCVVField);
         await cardCVVField.setValue(cvv);
+        const scrFillCard = await browser.takeScreenshot();
+        allure.addAttachment('card', Buffer.from(scrFillCard, 'base64'), './screenshots/card.png');
         await this.scrollDown(3);
     }
 
@@ -149,7 +154,7 @@ class Purchase {
             const isButtonPresent = await this.endPurchaseButton.isExisting();
             if (!isButtonPresent) {
                 console.warn(`Intento ${i + 1}: El botón "Pagar" no está disponible.`);
-                await driver.pause(1000); // Espera un segundo antes de reintentar.
+                await driver.pause(1000);
                 continue;
             }
     
@@ -160,6 +165,11 @@ class Purchase {
             const isSuccessVisible = await this.successMessage.isDisplayed();
             if (isSuccessVisible) {
                 console.log("Compra completada exitosamente.");
+
+                const scrEndPurchase = await browser.takeScreenshot();
+                allure.addAttachment('endpurchase', Buffer.from(scrEndPurchase, 'base64'), './screenshots/endpurchase.png');
+
+
                 return;
             }
         }

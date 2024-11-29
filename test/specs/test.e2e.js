@@ -55,7 +55,6 @@ describe('it should complete a simple purchase @e2e_001', () => {
         const addInsurance = true;
         await Insurance.selectInsuranceOption(addInsurance);
     });
-
     
     it('You should complete the purchase process', async () => {
         const purchaserData = purchaserValues;
