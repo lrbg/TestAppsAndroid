@@ -1,5 +1,6 @@
 const Helpers = require('./helpers.page.js');
 const fs = require('fs');
+const allure = require('@wdio/allure-reporter').default;
 
 
 class SplashScreen {
@@ -51,6 +52,9 @@ class SplashScreen {
         await Helpers.waitObjt(this.btnNextStepThree);
         await this.btnNextStepThree.click();
 
+
+        const screenshot = await browser.takeScreenshot();
+        allure.addAttachment('page splash', Buffer.from(screenshot, 'base64'), './screenshots/splash.png');
 
         //const screenshotBase64 = await driver.takeScreenshot();
         //fs.writeFileSync('./screenshots/splash.png', screenshotBase64, 'base64');

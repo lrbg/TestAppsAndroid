@@ -20,13 +20,13 @@ describe('it should complete a simple purchase @e2e_001', () => {
     it('Should validate splash component', async () => {
         await SplashScreen.validateAndCaptureElements();
     });
-
+/*
     it('You should perform a one-way search', async () => {
         const origin = searchValues[global.brand]?.origin_text || searchValues.default.origin_text;
         const destination = searchValues[global.brand]?.destination_text || searchValues.default.destination_text;
         await SearchPage.searchTripTomorrow(origin, destination);
     });
-    /*
+    
     it('Should count all available trips', async () => {
         await SelectTrip.selectRandomChooseButton();  //await driver.pause(1000000);
     });

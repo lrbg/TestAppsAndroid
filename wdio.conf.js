@@ -27,7 +27,7 @@ exports.config = {
         'appium:unlockKey': '1111',
         'appium:avd': 'test',  // git remote
         //'appium:avd': 'nightwatch-android-11',  // local 
-        'appium:platformVersion': '11.0',  // Android 30 = Android 11                    
+        //'appium:platformVersion': '11.0',  // Android 30 = Android 11                    
         'appium:appWaitActivity': '*',           
         'appium:appWaitDuration': 180000,         // 1 minuto
         'appium:printPageSourceOnFindFailure': true,
