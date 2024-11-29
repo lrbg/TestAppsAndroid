@@ -4,7 +4,7 @@ const Locator = require('../pageobjects/locator.page');
 const SplashScreen = require('../pageobjects/splash.page');
 const SearchPage = require('../pageobjects/search.page');
 const SelectTrip = require('../pageobjects/trip.page');
-const SeatsPage = require('../pageobjects/seats.page');
+const SeatAnalyzer = require('../pageobjects/seats.page'); 
 const Pax = require('../pageobjects/pax.page');
 const Insurance = require('../pageobjects/insurance.page');
 const Purchase = require('../pageobjects/purchase.page');
@@ -32,12 +32,15 @@ describe('it should complete a simple purchase @e2e_001', () => {
         await SelectTrip.selectRandomChooseButton();  
     });
 
-/*    
-    it('Should check and capture available and occupied seats', async () => {
-         await SeatsPage.analyzeAllSeats();
-         await SeatsPage.selectRandomSeats(1);
-    });
 
+    it('Should check and capture available and occupied seats', async () => {
+        const seatAnalyzer = SeatAnalyzer.getInstance(browser);
+        const analysisResults = await seatAnalyzer.analyzeAllSeats();
+        //console.log('Resultados del análisis de asientos:', analysisResults);
+        const selectedSeats = await seatAnalyzer.selectRandomSeats(1);
+        //console.log('Asientos seleccionados:', selectedSeats);
+    });
+/*    
     it('Should load passenger information', async () => {
         const numberOfPassengers = 1;
         const passengersData = passengers.slice(0, numberOfPassengers).map(pax => ({
