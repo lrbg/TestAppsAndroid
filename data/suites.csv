@@ -1,4 +1,3 @@
 "DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
-"","1717","Should validate splash component","","Fri Nov 29 00:04:21 UTC 2024","passed","Fri Nov 29 00:04:23 UTC 2024","","it should complete a simple purchase @e2e_001","",""
-"","5105","should validate and handle modal and GPS permissions","","Fri Nov 29 00:04:16 UTC 2024","passed","Fri Nov 29 00:04:21 UTC 2024","","it should complete a simple purchase @e2e_001","",""
-"","14404","You should perform a one-way search","","Fri Nov 29 00:04:23 UTC 2024","passed","Fri Nov 29 00:04:37 UTC 2024","","it should complete a simple purchase @e2e_001","",""
+"","4737","should validate and handle modal and GPS permissions","","Fri Nov 29 01:04:10 UTC 2024","passed","Fri Nov 29 01:04:15 UTC 2024","","it should complete a simple purchase @e2e_001","",""
+"","2507","Should validate splash component","","Fri Nov 29 01:04:15 UTC 2024","passed","Fri Nov 29 01:04:17 UTC 2024","","it should complete a simple purchase @e2e_001","",""
