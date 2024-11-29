@@ -1,4 +1,0 @@
-{
-  "using": "accessibility id",
-  "value": "Elige al menos 1 asiento"
-}

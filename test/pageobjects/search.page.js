@@ -241,7 +241,7 @@ class SearchPage {
   async searchTripTomorrow(origin, destination) {
     try {
       const scrBeginSearch = await browser.takeScreenshot();
-      allure.addAttachment('page splash', Buffer.from(scrBeginSearch, 'base64'), './screenshots/BeginSearch.png');
+      allure.addAttachment('img_BeginSearch', Buffer.from(scrBeginSearch, 'base64'), './screenshots/BeginSearch.png');
       await Helpers.waitObjt(this.originInput);
       await this.originInput.click();
       await Helpers.waitObjt(this.originSearchInput);
@@ -258,7 +258,7 @@ class SearchPage {
       await this.tomorrowButton.click();
       await Helpers.waitObjt(this.searchButton);
       const scrEndSearch = await browser.takeScreenshot();
-      allure.addAttachment('page splash', Buffer.from(scrEndSearch, 'base64'), './screenshots/EndSearch.png');
+      allure.addAttachment('img_EndSearch', Buffer.from(scrEndSearch, 'base64'), './screenshots/EndSearch.png');
       await this.searchButton.click();
     } catch (error) {
       console.error('Error al buscar el viaje de mañana:', error);

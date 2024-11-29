@@ -1,4 +1,0 @@
-{
-  "using": "xpath",
-  "value": "//android.view.ViewGroup[@clickable=\"false\" and .//android.widget.TextView[@text=\"Elegir\"]]"
-}

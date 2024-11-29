@@ -1,5 +1,5 @@
 const Helpers = require('./helpers.page');
-const fs = require('fs');
+const allure = require('@wdio/allure-reporter').default;
 
 class SelectTrip {
     /**
@@ -100,8 +100,8 @@ class SelectTrip {
         try {
             const trips = await this.gatherAllTrips();
 
-            const screenshotBase64 = await driver.takeScreenshot();
-            fs.writeFileSync('./screenshots/listTrip.png', screenshotBase64, 'base64');
+            const scrListTrips = await browser.takeScreenshot();
+            allure.addAttachment('img_ListTrip', Buffer.from(scrListTrips, 'base64'), './screenshots/ListTrip.png');
 
             if (!trips.length) {
                 throw new Error('No se encontraron viajes disponibles');
