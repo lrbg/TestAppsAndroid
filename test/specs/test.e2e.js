@@ -36,7 +36,9 @@ describe('it should complete a simple purchase @e2e_001', () => {
     it('Should check and capture available and occupied seats', async () => {
         const seatAnalyzer = SeatAnalyzer.getInstance(browser);
         const analysisResults = await seatAnalyzer.analyzeAllSeats();
+        console.log('Resultados del análisis de asientos:', analysisResults);
         const selectedSeats = await seatAnalyzer.selectRandomSeats(1);
+        console.log('Asientos seleccionados:', selectedSeats);
     });
 
     it('Should load passenger information', async () => {
@@ -48,7 +50,9 @@ describe('it should complete a simple purchase @e2e_001', () => {
         }));
         await Pax.loadPassengerData(passengersData);
     });
-    /*    
+
+    /*
+    
     it('You should select medical insurance', async () => {
         const addInsurance = true;
         await Insurance.selectInsuranceOption(addInsurance);

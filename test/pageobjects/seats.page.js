@@ -52,21 +52,11 @@ class SeatAnalyzer {
     async selectRandomSeats(numberOfSeats) {
         try {
             if (numberOfSeats > this.availableSeats.length) {
-
-                const scrNoSeats = await browser.takeScreenshot();
-                allure.addAttachment('img_NoSeats', Buffer.from(scrNoSeats, 'base64'), './screenshots/img_NoSeats.png');
-
                 throw new Error(`No hay suficientes asientos disponibles. Solicitados: ${numberOfSeats}, Disponibles: ${this.availableSeats.length}`);
             }
-
             const availableSeatsShuffled = [...this.availableSeats].sort(() => Math.random() - 0.5);
             const seatsToSelect = availableSeatsShuffled.slice(0, numberOfSeats);
-
-            
             console.log(`Seleccionando ${numberOfSeats} asientos aleatorios:`, seatsToSelect);
-
-
-
             for (const seatNumber of seatsToSelect) {
                 await this.selectSeat(seatNumber);
                 this.selectedSeats.push(seatNumber);
@@ -90,21 +80,29 @@ class SeatAnalyzer {
             if (!(await this.isSeatInteractable(seat))) {
                 throw new Error(`El asiento ${seatNumber} no es interactuable`);
             }
-
-            await this.driver.pause(1000);
-            
+    
             await seat.click();
-
-            const scrSelectSeats = await browser.takeScreenshot();
-            allure.addAttachment('img_SelectSeats', Buffer.from(scrSelectSeats, 'base64'), './screenshots/img_SelectSeats.png');
-
             console.log(`Asiento ${seatNumber} seleccionado correctamente`);
-
+            
+            const scrSelectSeat = await browser.takeScreenshot();
+            allure.addAttachment('img_SelectSeat', Buffer.from(scrSelectSeat, 'base64'), './screenshots/img_SelectSeat.png');
+    
+            const selectedCount = this.selectedSeats.length + 1; 
+            const buttonSelector = `~Continuar con ${selectedCount} asiento${selectedCount > 1 ? 's' : ''}`;
+    
+            const continueButton = await this.driver.$(buttonSelector);
+            await Helpers.waitObjt(continueButton);
+            if (!(await continueButton.isDisplayed())) {
+                throw new Error(`Botón "Continuar con ${selectedCount} asiento(s)" no está visible`);
+            }
+            await continueButton.click();
+            console.log(`Botón "Continuar con ${selectedCount} asiento(s)" clicado correctamente`);
         } catch (error) {
             console.error(`Error al seleccionar el asiento ${seatNumber}:`, error);
             throw error;
         }
     }
+    
 
     async analyzeAllSeats() {
         try {
