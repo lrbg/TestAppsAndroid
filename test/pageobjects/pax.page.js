@@ -1,4 +1,5 @@
 const Helpers = require('./helpers.page.js');
+const allure = require('@wdio/allure-reporter').default;
 
 class Pax {
     get paxDataContainer() {
@@ -21,6 +22,10 @@ class Pax {
             await this.scrollUntilVisible(passengerBox);
             await this.fillPassengerDetails(passengerBox, passengerData);
         }
+
+        const scrPaxForm = await browser.takeScreenshot();
+        allure.addAttachment('PaxForm', Buffer.from(scrPaxForm, 'base64'), './screenshots/PaxForm.png');
+
         await this.clickNextButton();
     }
 
